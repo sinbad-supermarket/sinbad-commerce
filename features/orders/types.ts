@@ -48,10 +48,8 @@ export type VendorOrderRow = {
   status: OrderStatus;
   created_at: string;
   updated_at: string;
-  vendors?: {
-    name_en: string;
-    slug: string;
-  } | null;
+  vendor_name_en: string;
+  vendor_slug: string;
 };
 
 export type AdminOrderDetail = OrderListItem & {

@@ -74,7 +74,7 @@ export async function getAdminOrderById(id: string) {
         .order("created_at", { ascending: true }),
       supabase
         .from("vendor_orders")
-        .select("*, vendors(name_en, slug)")
+        .select("*")
         .eq("order_id", id)
         .order("created_at", { ascending: true }),
     ]);
@@ -87,9 +87,32 @@ export async function getAdminOrderById(id: string) {
     throw new Error(vendorOrdersError.message);
   }
 
+  const typedItems = (items ?? []) as OrderItemRow[];
+  const vendorSnapshots = new Map(
+    typedItems.map((item) => [
+      item.vendor_id,
+      {
+        vendor_name_en: item.vendor_name_en,
+        vendor_slug: item.vendor_slug,
+      },
+    ]),
+  );
+  const typedVendorOrders = ((vendorOrders ?? []) as Omit<
+    VendorOrderRow,
+    "vendor_name_en" | "vendor_slug"
+  >[]).map((vendorOrder) => {
+    const snapshot = vendorSnapshots.get(vendorOrder.vendor_id);
+
+    return {
+      ...vendorOrder,
+      vendor_name_en: snapshot?.vendor_name_en ?? vendorOrder.vendor_id,
+      vendor_slug: snapshot?.vendor_slug ?? "",
+    };
+  });
+
   return {
     ...(order as Omit<AdminOrderDetail, "items" | "vendorOrders">),
-    items: (items ?? []) as OrderItemRow[],
-    vendorOrders: (vendorOrders ?? []) as VendorOrderRow[],
+    items: typedItems,
+    vendorOrders: typedVendorOrders,
   };
 }

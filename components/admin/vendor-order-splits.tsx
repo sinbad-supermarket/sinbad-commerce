@@ -28,12 +28,12 @@ export function VendorOrderSplits({ vendorOrders, onUpdate }: VendorOrderSplitsP
           {vendorOrders.map((vendorOrder) => (
             <tr key={vendorOrder.id}>
               <td>
-                {vendorOrder.vendors ? (
-                  <Link href={`/store/${vendorOrder.vendors.slug}`}>
-                    {vendorOrder.vendors.name_en}
+                {vendorOrder.vendor_slug ? (
+                  <Link href={`/store/${vendorOrder.vendor_slug}`}>
+                    {vendorOrder.vendor_name_en}
                   </Link>
                 ) : (
-                  vendorOrder.vendor_id
+                  vendorOrder.vendor_name_en
                 )}
               </td>
               <td>{formatCartMoney(vendorOrder.vendor_subtotal)}</td>
