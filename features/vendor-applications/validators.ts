@@ -2,7 +2,12 @@ import { normalizeSlug } from "@/lib/utils/slug";
 import { deliveryHandledByOptions, type DeliveryHandledBy } from "./types";
 
 export const vendorApplicationDocumentBucket = "vendor-application-documents";
-export const maxVendorApplicationDocumentSize = 5 * 1024 * 1024;
+export const maxVendorApplicationDocumentSize = 3 * 1024 * 1024;
+export const maxVendorApplicationDocumentTotalSize = 10 * 1024 * 1024;
+export const vendorApplicationDocumentSizeMessage =
+  "Each document must be 3 MB or smaller. Please upload a smaller/compressed file.";
+export const vendorApplicationDocumentTotalSizeMessage =
+  "Total document upload size must be 10 MB or smaller. Please reduce file sizes and try again.";
 export const allowedVendorApplicationDocumentMimeTypes = [
   "application/pdf",
   "image/jpeg",
@@ -150,7 +155,7 @@ function requiredDocument(value: FormDataEntryValue | null, label: string) {
   }
 
   if (value.size > maxVendorApplicationDocumentSize) {
-    throw new Error(`${label} must be 5 MB or smaller.`);
+    throw new Error(vendorApplicationDocumentSizeMessage);
   }
 
   if (!allowedVendorApplicationDocumentMimeTypes.includes(value.type as AllowedVendorApplicationDocumentMimeType)) {
@@ -195,6 +200,26 @@ export function parseVendorApplicationFormData(formData: FormData): {
 
   if (signatoryDiffersFromOwner(owner_full_name, authorized_signatory_name) && !authorizationDocument) {
     throw new Error("Authorization document is required when the signatory differs from the owner.");
+  }
+
+  const ownerDocument = requiredDocument(
+    formData.get("owner_civil_id_or_passport_document"),
+    "Owner civil ID/passport document",
+  );
+  const licenseDocument = requiredDocument(
+    formData.get("commercial_license_document"),
+    "Commercial license document",
+  );
+  const bankDocument = optionalDocument(formData.get("bank_document"), "Bank document");
+  const totalDocumentSize = [
+    ownerDocument,
+    licenseDocument,
+    authorizationDocument,
+    bankDocument,
+  ].reduce((total, file) => total + (file?.size ?? 0), 0);
+
+  if (totalDocumentSize > maxVendorApplicationDocumentTotalSize) {
+    throw new Error(vendorApplicationDocumentTotalSizeMessage);
   }
 
   return {
@@ -264,16 +289,10 @@ export function parseVendorApplicationFormData(formData: FormData): {
       bank_branch: optionalText(formData.get("bank_branch")),
     },
     files: {
-      ownerDocument: requiredDocument(
-        formData.get("owner_civil_id_or_passport_document"),
-        "Owner civil ID/passport document",
-      ),
-      licenseDocument: requiredDocument(
-        formData.get("commercial_license_document"),
-        "Commercial license document",
-      ),
+      ownerDocument,
+      licenseDocument,
       authorizationDocument,
-      bankDocument: optionalDocument(formData.get("bank_document"), "Bank document"),
+      bankDocument,
     },
   };
 }

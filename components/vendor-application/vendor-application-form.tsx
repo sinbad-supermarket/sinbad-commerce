@@ -1,4 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { deliveryHandledByOptions } from "@/features/vendor-applications/types";
+import {
+  maxVendorApplicationDocumentSize,
+  maxVendorApplicationDocumentTotalSize,
+  vendorApplicationDocumentSizeMessage,
+  vendorApplicationDocumentTotalSizeMessage,
+} from "@/features/vendor-applications/validators";
 
 type VendorApplicationFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -11,9 +21,43 @@ export function VendorApplicationForm({
   error,
   success,
 }: VendorApplicationFormProps) {
+  const [clientError, setClientError] = useState<string | null>(null);
+
+  function selectedFile(form: HTMLFormElement, name: string) {
+    const input = form.elements.namedItem(name);
+    return input instanceof HTMLInputElement ? input.files?.[0] ?? null : null;
+  }
+
+  function validateDocumentSizes(event: FormEvent<HTMLFormElement>) {
+    const form = event.currentTarget;
+    const files = [
+      selectedFile(form, "owner_civil_id_or_passport_document"),
+      selectedFile(form, "commercial_license_document"),
+      selectedFile(form, "authorization_document"),
+      selectedFile(form, "bank_document"),
+    ].filter(Boolean) as File[];
+
+    if (files.some((file) => file.size > maxVendorApplicationDocumentSize)) {
+      event.preventDefault();
+      setClientError(vendorApplicationDocumentSizeMessage);
+      return;
+    }
+
+    const totalSize = files.reduce((total, file) => total + file.size, 0);
+
+    if (totalSize > maxVendorApplicationDocumentTotalSize) {
+      event.preventDefault();
+      setClientError(vendorApplicationDocumentTotalSizeMessage);
+      return;
+    }
+
+    setClientError(null);
+  }
+
   return (
-    <form className="admin-form wide-form" action={action}>
+    <form className="admin-form wide-form" action={action} onSubmit={validateDocumentSizes}>
       {success ? <p className="success-banner">{success}</p> : null}
+      {clientError ? <p className="form-error">{clientError}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
       <fieldset className="fieldset">
@@ -201,6 +245,9 @@ export function VendorApplicationForm({
 
       <fieldset className="fieldset">
         <legend>Documents</legend>
+        <p className="field-help">
+          PDF, JPG, PNG, or WebP. Max 3 MB per file. Max 10 MB total.
+        </p>
         <div className="form-grid">
           <label className="field">
             <span>Owner civil ID/passport document</span>
