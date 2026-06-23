@@ -6,6 +6,7 @@ import {
   updateVendorOrderStatus,
 } from "@/features/orders/admin-actions";
 import { getAdminOrderById } from "@/features/orders/admin-queries";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -15,6 +16,7 @@ export default async function AdminOrderDetailPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
+  await requireAdmin();
   const order = await getAdminOrderById(id);
 
   if (!order) {
