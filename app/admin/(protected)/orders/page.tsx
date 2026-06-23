@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { formatCartMoney } from "@/components/cart/cart-summary";
 import { listAdminOrders } from "@/features/orders/admin-queries";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export default async function AdminOrdersPage() {
+  await requireAdmin();
   const orders = await listAdminOrders();
 
   return (
