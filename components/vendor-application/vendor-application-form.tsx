@@ -38,15 +38,6 @@ export function VendorApplicationForm({
             <input name="owner_civil_id_or_passport_number" required />
           </label>
         </div>
-        <label className="field">
-          <span>Owner civil ID/passport document</span>
-          <input
-            name="owner_civil_id_or_passport_document"
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            required
-          />
-        </label>
         <div className="form-grid">
           <label className="field">
             <span>Authorized signatory name</span>
@@ -57,14 +48,6 @@ export function VendorApplicationForm({
             <input name="authorized_signatory_phone" />
           </label>
         </div>
-        <label className="field">
-          <span>Authorization document</span>
-          <input
-            name="authorization_document"
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-          />
-        </label>
         <div className="form-grid">
           <label className="field">
             <span>Emergency contact phone</span>
@@ -89,15 +72,6 @@ export function VendorApplicationForm({
             <input name="commercial_license_number" required />
           </label>
         </div>
-        <label className="field">
-          <span>Commercial license document</span>
-          <input
-            name="commercial_license_document"
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-            required
-          />
-        </label>
         <label className="field">
           <span>Business address</span>
           <textarea name="business_address" required />
@@ -223,14 +197,48 @@ export function VendorApplicationForm({
             <input name="bank_branch" />
           </label>
         </div>
-        <label className="field">
-          <span>Bank document</span>
-          <input
-            name="bank_document"
-            type="file"
-            accept="application/pdf,image/jpeg,image/png,image/webp"
-          />
-        </label>
+      </fieldset>
+
+      <fieldset className="fieldset">
+        <legend>Documents</legend>
+        <div className="form-grid">
+          <label className="field">
+            <span>Owner civil ID/passport document</span>
+            <input
+              name="owner_civil_id_or_passport_document"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Commercial license document</span>
+            <input
+              name="commercial_license_document"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              required
+            />
+          </label>
+        </div>
+        <div className="form-grid">
+          <label className="field">
+            <span>Authorization document</span>
+            <input
+              name="authorization_document"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+            />
+          </label>
+          <label className="field">
+            <span>Bank document</span>
+            <input
+              name="bank_document"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+            />
+          </label>
+        </div>
       </fieldset>
 
       <button className="primary-button" type="submit">
