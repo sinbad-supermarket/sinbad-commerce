@@ -26,7 +26,9 @@ export function VendorShell({
             <Link href="/vendor">Dashboard</Link>
             <Link href="/vendor/products">Products</Link>
             {memberships.length > 1 ? <Link href="/vendor/select">Switch vendor</Link> : null}
-            <Link href="/vendor/logout">Logout</Link>
+            <form action="/vendor/logout" method="post">
+              <button type="submit">Logout</button>
+            </form>
           </nav>
         </div>
       </header>

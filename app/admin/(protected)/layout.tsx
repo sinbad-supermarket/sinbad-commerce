@@ -21,7 +21,9 @@ export default async function ProtectedAdminLayout({
             <Link href="/admin/vendors">Vendors</Link>
             <Link href="/admin/product-reviews">Reviews</Link>
             <Link href="/admin/orders">Orders</Link>
-            <Link href="/admin/logout">Logout</Link>
+            <form action="/admin/logout" method="post">
+              <button type="submit">Logout</button>
+            </form>
           </nav>
         </div>
       </header>

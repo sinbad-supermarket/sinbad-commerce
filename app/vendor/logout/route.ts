@@ -4,6 +4,10 @@ import { selectedVendorCookieName } from "@/lib/auth/require-vendor";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
+  redirect("/vendor");
+}
+
+export async function POST() {
   const supabase = await createSupabaseServerClient();
   const cookieStore = await cookies();
 

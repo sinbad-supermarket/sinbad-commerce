@@ -62,9 +62,20 @@ a {
   gap: 20px;
 }
 
-.nav a {
+.nav form {
+  margin: 0;
+}
+
+.nav a,
+.nav button {
+  appearance: none;
+  background: transparent;
+  border: 0;
   color: var(--muted);
+  cursor: pointer;
   font-size: 14px;
+  font: inherit;
+  padding: 0;
 }
 
 .nav-disabled {
