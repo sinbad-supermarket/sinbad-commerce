@@ -78,6 +78,12 @@ export async function getVendorApplicationDocuments(
           path: application.authorization_document_path,
         }
       : null,
+    application.bank_document_path
+      ? {
+          label: "Bank document",
+          path: application.bank_document_path,
+        }
+      : null,
   ].filter(Boolean) as { label: string; path: string }[];
 
   const supabase = createSupabaseAdminClient();

@@ -157,6 +157,17 @@ export function VendorApplicationDetail({
       </section>
 
       <section className="admin-panel">
+        <h2>Bank / Settlement Details</h2>
+        <dl className="detail-grid">
+          <DetailItem label="Bank name" value={application.bank_name} />
+          <DetailItem label="Account holder name" value={application.account_holder_name} />
+          <DetailItem label="IBAN" value={application.iban} />
+          <DetailItem label="Account number" value={application.account_number} />
+          <DetailItem label="Bank branch" value={application.bank_branch} />
+        </dl>
+      </section>
+
+      <section className="admin-panel">
         <h2>Documents</h2>
         <div className="document-list">
           {documents.map((document) => (

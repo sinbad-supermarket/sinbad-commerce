@@ -120,9 +120,11 @@ Public applicants submit at `/vendors/apply` with three separated sections:
 - Owner / Responsible Person data for legal, compliance, and account responsibility.
 - Legal Business / Company data for license and company review.
 - Store / Merchant Operational data for future public store setup and order routing.
+- Bank / Settlement Details for future vendor settlement and payout workflows.
 
 Owner and legal data are private admin records and are not displayed publicly. Store
 profile fields are used only after admin approval creates a vendor.
+Bank details are private admin records and are never displayed publicly.
 
 Vendor application records use:
 
@@ -134,6 +136,7 @@ Required documents:
 - owner civil ID or passport document
 - commercial license document
 - authorization document when the authorized signatory differs from the owner
+- optional bank document
 
 Documents are private, limited to PDF/JPG/PNG/WebP, and capped at 5 MB each.
 Signed document URLs are generated only after an admin guard passes.
@@ -174,3 +177,5 @@ Security boundaries:
 - Admins can read and update applications through RLS.
 - Public submission uses isolated server-only service-role persistence.
 - Service-role keys are never exposed to browser components.
+- Bank details are collected for later settlement workflows only; no wallet,
+  payout, or payment provider integration exists in this milestone.

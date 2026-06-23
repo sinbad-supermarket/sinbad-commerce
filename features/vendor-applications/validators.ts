@@ -42,12 +42,18 @@ export type VendorApplicationInput = {
   expected_daily_order_capacity: number | null;
   return_policy_notes: string | null;
   delivery_handled_by: DeliveryHandledBy | null;
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  account_number: string | null;
+  bank_branch: string | null;
 };
 
 export type VendorApplicationFiles = {
   ownerDocument: File;
   licenseDocument: File;
   authorizationDocument: File | null;
+  bankDocument: File | null;
 };
 
 export function optionalText(value: FormDataEntryValue | null) {
@@ -248,6 +254,14 @@ export function parseVendorApplicationFormData(formData: FormData): {
       ),
       return_policy_notes: optionalText(formData.get("return_policy_notes")),
       delivery_handled_by: optionalDeliveryHandledBy(formData.get("delivery_handled_by")),
+      bank_name: requiredText(formData.get("bank_name"), "Bank name"),
+      account_holder_name: requiredText(
+        formData.get("account_holder_name"),
+        "Account holder name",
+      ),
+      iban: requiredText(formData.get("iban"), "IBAN"),
+      account_number: optionalText(formData.get("account_number")),
+      bank_branch: optionalText(formData.get("bank_branch")),
     },
     files: {
       ownerDocument: requiredDocument(
@@ -259,6 +273,7 @@ export function parseVendorApplicationFormData(formData: FormData): {
         "Commercial license document",
       ),
       authorizationDocument,
+      bankDocument: optionalDocument(formData.get("bank_document"), "Bank document"),
     },
   };
 }

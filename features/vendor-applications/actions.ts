@@ -87,12 +87,19 @@ export async function submitVendorApplication(formData: FormData) {
     const authorizationDocumentPath = files.authorizationDocument
       ? documentPath(applicationId, "authorization", files.authorizationDocument)
       : null;
+    const bankDocumentPath = files.bankDocument
+      ? documentPath(applicationId, "bank", files.bankDocument)
+      : null;
 
     await uploadDocument(ownerDocumentPath, files.ownerDocument);
     await uploadDocument(licenseDocumentPath, files.licenseDocument);
 
     if (files.authorizationDocument && authorizationDocumentPath) {
       await uploadDocument(authorizationDocumentPath, files.authorizationDocument);
+    }
+
+    if (files.bankDocument && bankDocumentPath) {
+      await uploadDocument(bankDocumentPath, files.bankDocument);
     }
 
     const supabase = createSupabaseAdminClient();
@@ -102,6 +109,7 @@ export async function submitVendorApplication(formData: FormData) {
       owner_civil_id_or_passport_document_path: ownerDocumentPath,
       commercial_license_document_path: licenseDocumentPath,
       authorization_document_path: authorizationDocumentPath,
+      bank_document_path: bankDocumentPath,
     });
 
     if (error) {

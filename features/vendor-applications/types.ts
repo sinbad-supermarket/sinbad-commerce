@@ -45,6 +45,12 @@ export type VendorApplicationRow = {
   expected_daily_order_capacity: number | null;
   return_policy_notes: string | null;
   delivery_handled_by: DeliveryHandledBy | null;
+  bank_name: string;
+  account_holder_name: string;
+  iban: string;
+  account_number: string | null;
+  bank_branch: string | null;
+  bank_document_path: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   rejection_reason: string | null;

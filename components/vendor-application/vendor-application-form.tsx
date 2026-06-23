@@ -197,6 +197,42 @@ export function VendorApplicationForm({
         </div>
       </fieldset>
 
+      <fieldset className="fieldset">
+        <legend>Bank / Settlement Details</legend>
+        <div className="form-grid">
+          <label className="field">
+            <span>Bank name</span>
+            <input name="bank_name" required />
+          </label>
+          <label className="field">
+            <span>Account holder name</span>
+            <input name="account_holder_name" required />
+          </label>
+        </div>
+        <label className="field">
+          <span>IBAN</span>
+          <input name="iban" required />
+        </label>
+        <div className="form-grid">
+          <label className="field">
+            <span>Account number</span>
+            <input name="account_number" />
+          </label>
+          <label className="field">
+            <span>Bank branch</span>
+            <input name="bank_branch" />
+          </label>
+        </div>
+        <label className="field">
+          <span>Bank document</span>
+          <input
+            name="bank_document"
+            type="file"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+          />
+        </label>
+      </fieldset>
+
       <button className="primary-button" type="submit">
         Submit application
       </button>
