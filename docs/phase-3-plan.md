@@ -109,3 +109,68 @@ Order and vendor order statuses:
 - `cancelled`
 
 Admin order management uses normal Supabase server clients with admin RLS policies. No service-role client is used for normal admin order management.
+
+## Milestone 4: Vendor Application / Vendor Onboarding Request Flow
+
+Implemented vendor application intake without adding customer accounts, payments,
+shipping, inventory, or new commerce workflows.
+
+Public applicants submit at `/vendors/apply` with three separated sections:
+
+- Owner / Responsible Person data for legal, compliance, and account responsibility.
+- Legal Business / Company data for license and company review.
+- Store / Merchant Operational data for future public store setup and order routing.
+
+Owner and legal data are private admin records and are not displayed publicly. Store
+profile fields are used only after admin approval creates a vendor.
+
+Vendor application records use:
+
+- `vendor_applications`
+- private storage bucket `vendor-application-documents`
+
+Required documents:
+
+- owner civil ID or passport document
+- commercial license document
+- authorization document when the authorized signatory differs from the owner
+
+Documents are private, limited to PDF/JPG/PNG/WebP, and capped at 5 MB each.
+Signed document URLs are generated only after an admin guard passes.
+
+Admin review is available at:
+
+- `/admin/vendor-applications`
+- `/admin/vendor-applications/[id]`
+
+Admin can:
+
+- view application details and private documents
+- mark an application under review
+- approve an application
+- reject an application with a required rejection reason
+
+Approval creates a private active vendor from store/legal data:
+
+- `vendors.name_en = store_name_en`
+- `vendors.name_ar = store_name_ar`
+- `vendors.slug = proposed_store_slug`
+- `vendors.description_en = short_store_description_en`
+- `vendors.description_ar = short_store_description_ar`
+- `vendors.status = active`
+- `vendors.is_public = false`
+
+Approval stores the selected `vendor_login_email`, defaulting to `owner_email`.
+No Auth user, invite, or `vendor_users` membership is created automatically. Admins
+must complete user setup manually through the existing vendor user assignment flow.
+
+Rejection does not create a vendor, Auth user, or membership. Rejection email
+delivery remains manual until an email provider is explicitly approved.
+
+Security boundaries:
+
+- Public users cannot read applications.
+- Public users cannot read documents.
+- Admins can read and update applications through RLS.
+- Public submission uses isolated server-only service-role persistence.
+- Service-role keys are never exposed to browser components.

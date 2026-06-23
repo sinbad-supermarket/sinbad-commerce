@@ -15,6 +15,7 @@ export default function PublicLayout({
           <nav className="nav" aria-label="Public navigation">
             <Link href="/products">Products</Link>
             <Link href="/store">Stores</Link>
+            <Link href="/vendors/apply">Apply</Link>
             <Link href="/search">Search</Link>
             <Link href="/cart">Cart</Link>
           </nav>

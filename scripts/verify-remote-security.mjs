@@ -20,7 +20,8 @@ const checks = [
           'cart_items',
           'orders',
           'order_items',
-          'vendor_orders'
+          'vendor_orders',
+          'vendor_applications'
         )
       order by relname;
     `,
@@ -100,7 +101,8 @@ const checks = [
           'cart_items',
           'orders',
           'order_items',
-          'vendor_orders'
+          'vendor_orders',
+          'vendor_applications'
         )
       order by tablename;
     `,
@@ -120,7 +122,8 @@ const checks = [
           'product_categories',
           'orders',
           'order_items',
-          'vendor_orders'
+          'vendor_orders',
+          'vendor_applications'
         )
       order by tablename, policyname;
     `,
@@ -140,7 +143,8 @@ const checks = [
           'cart_items',
           'orders',
           'order_items',
-          'vendor_orders'
+          'vendor_orders',
+          'vendor_applications'
         )
         and privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
       order by table_name, grantee, privilege_type;
@@ -151,7 +155,8 @@ const checks = [
     sql: `
       select id, public, file_size_limit, allowed_mime_types
       from storage.buckets
-      where id = 'product-images';
+      where id in ('product-images', 'vendor-application-documents')
+      order by id;
     `,
   },
 ];

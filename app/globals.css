@@ -160,6 +160,15 @@ a {
   margin: 0;
 }
 
+.success-banner {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  color: #166534;
+  margin: 0;
+  padding: 14px 16px;
+}
+
 .primary-button {
   background: #111827;
   border: 0;
@@ -294,6 +303,15 @@ a {
   padding: 24px;
 }
 
+.wide-form {
+  max-width: none;
+}
+
+.compact-form {
+  max-width: 560px;
+  padding: 18px;
+}
+
 .form-grid {
   display: grid;
   gap: 18px;
@@ -318,6 +336,66 @@ a {
   gap: 12px;
   margin: 0;
   padding: 16px;
+}
+
+.fieldset legend {
+  font-weight: 700;
+  padding: 0 8px;
+}
+
+.section-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+}
+
+.admin-panel h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.panel-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.detail-grid dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detail-grid dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.document-list,
+.review-actions {
+  display: grid;
+  gap: 14px;
+}
+
+.muted-text {
+  color: var(--muted);
 }
 
 .fieldset legend {
