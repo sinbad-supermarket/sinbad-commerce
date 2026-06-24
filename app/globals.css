@@ -256,6 +256,15 @@ a {
   border-bottom: 0;
 }
 
+.category-parent {
+  font-weight: 700;
+}
+
+.category-child {
+  color: var(--muted);
+  padding-left: 18px;
+}
+
 .status-active,
 .status-muted {
   border-radius: 999px;

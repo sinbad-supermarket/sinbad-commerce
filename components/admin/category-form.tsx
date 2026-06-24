@@ -8,6 +8,14 @@ type CategoryFormProps = {
   submitLabel: string;
 };
 
+function optionLabel(category: CategoryRow, categories: CategoryRow[]) {
+  const parent = category.parent_id
+    ? categories.find((item) => item.id === category.parent_id)
+    : null;
+
+  return parent ? `${parent.name_en} / ${category.name_en}` : category.name_en;
+}
+
 export function CategoryForm({
   action,
   category,
@@ -40,7 +48,7 @@ export function CategoryForm({
             <option value="">None</option>
             {parentOptions.map((parent) => (
               <option key={parent.id} value={parent.id}>
-                {parent.name_en}
+                {optionLabel(parent, parentOptions)}
               </option>
             ))}
           </select>

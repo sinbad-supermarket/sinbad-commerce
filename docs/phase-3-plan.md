@@ -191,3 +191,70 @@ Security boundaries:
 - Service-role keys are never exposed to browser components.
 - Bank details are collected for later settlement workflows only; no wallet,
   payout, or payment provider integration exists in this milestone.
+
+## Milestone 5: Sinbad Catalog Taxonomy Foundation
+
+Implemented Sinbad Taxonomy v1 as a controlled category/subcategory foundation
+for future product submission, search, filtering, SEO, and admin catalog
+management.
+
+The existing `categories` table already supported:
+
+- parent-child hierarchy through `parent_id`
+- bilingual names and descriptions
+- unique slugs
+- active/inactive state
+- sort order
+- timestamps
+- RLS-enabled admin/public access boundaries
+
+Taxonomy v1 seeds parent categories and subcategories for:
+
+- Grocery & Food
+- Beverages
+- Beauty & Personal Care
+- Baby & Kids
+- Household & Cleaning
+- Home & Kitchen
+- Electronics
+- Mobile Accessories
+- Fashion
+- Shoes & Bags
+- Health & Wellness
+- Pet Supplies
+- Toys & Games
+- Stationery & Office
+- Sports & Outdoors
+- Automotive Accessories
+- Books & Media
+- Flowers & Gifts
+- Services & Digital
+
+Restricted placeholders such as supplements, gift cards, and digital services
+are seeded inactive until legal, policy, and fulfillment rules are approved.
+
+Prohibited category policy:
+
+- Do not seed or allow alcohol, pork or pork-derived food, tobacco, cigarettes,
+  vapes, nicotine, CBD, THC, recreational drugs, prescription or controlled
+  medicine, adult sexual products, pornographic material, gambling, weapons,
+  firearms, ammunition, explosives, political or extremist materials,
+  counterfeit goods, illegal surveillance/spyware, or products prohibited in
+  Kuwait/GCC/Arab markets.
+
+Admin category management rules:
+
+- Admins can add, edit, disable, and sort categories and subcategories.
+- Categories are not hard-deleted through the admin UI.
+- Disabling uses `is_active = false`.
+- Admins can see active and inactive categories.
+- Public and future vendor product forms must use active categories only.
+
+Future product form requirement:
+
+- Product Submission Form v2 must use controlled searchable dropdowns.
+- Category dropdown must show active parent categories.
+- Subcategory dropdown must be filtered by the selected parent category and
+  disabled/hidden until a parent category is selected.
+- A suggested category field can be added later when no controlled match exists,
+  but it must not create categories automatically.
