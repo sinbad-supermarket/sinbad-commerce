@@ -22,6 +22,10 @@ function sortedImages(images: StagedSubmissionImageListItem[]) {
   return [...images].sort((a, b) => a.sort_order - b.sort_order);
 }
 
+function imageAlt(image: StagedSubmissionImageListItem) {
+  return image.alt_text_en ?? image.alt_text_ar ?? "Product image";
+}
+
 export function VendorSubmissionImages({
   canEdit,
   images,
@@ -49,89 +53,93 @@ export function VendorSubmissionImages({
         <span className="field-help">First image in the list is shown first after approval.</span>
       </div>
 
-      {canEdit ? (
-        <VendorImageUploadDropzone action={uploadAction} disabled={images.length >= 8} />
-      ) : null}
+      <VendorImageUploadDropzone action={uploadAction} disabled={!canEdit || images.length >= 8}>
+        {orderedImages.length === 0 ? (
+          <p className="empty-state">Upload at least 2 product images to submit for review.</p>
+        ) : (
+          <div className="seller-thumbnail-grid">
+            {orderedImages.map((image, index) => {
+              const previousImage = orderedImages[index - 1];
+              const nextImage = orderedImages[index + 1];
 
-      {orderedImages.length === 0 ? (
-        <p className="empty-state">Upload at least 2 product images to submit for review.</p>
-      ) : (
-        <div className="image-card-grid">
-          {orderedImages.map((image, index) => {
-            const previousImage = orderedImages[index - 1];
-            const nextImage = orderedImages[index + 1];
-
-            return (
-            <article className="image-card" key={image.id}>
-              <div className="image-card-preview">
-                {image.is_primary ? <span className="primary-image-badge">★ Primary</span> : null}
-                {image.signedUrl ? (
-                  <a href={image.signedUrl} rel="noreferrer" target="_blank">
-                    <img
-                      alt={image.alt_text_en ?? image.alt_text_ar ?? "Staged product image"}
-                      src={image.signedUrl}
-                    />
-                  </a>
-                ) : (
-                  <span>Preview unavailable</span>
-                )}
-              </div>
-
-              <form className="image-details" action={onUpdate(image.id)}>
-                <div className="image-meta">
-                  <span>Image {index + 1}</span>
-                  <span>{image.width ?? "?"}x{image.height ?? "?"}</span>
-                  <span>{formatFileSize(image.file_size)}</span>
-                </div>
-                <input name="alt_text_en" type="hidden" value={image.alt_text_en ?? ""} />
-                <input name="alt_text_ar" type="hidden" value={image.alt_text_ar ?? ""} />
-
-                {canEdit ? (
-                  <div className="image-action-row">
-                    {previousImage ? (
-                      <button
-                        className="secondary-button"
-                        name="sort_order"
-                        type="submit"
-                        value={previousImage.sort_order - 1}
-                      >
-                        Move left
-                      </button>
+              return (
+                <article className="seller-thumbnail-card" key={image.id}>
+                  <div className="seller-thumbnail-preview">
+                    {image.is_primary ? (
+                      <span aria-label="Primary image" className="seller-primary-star">
+                        ★
+                      </span>
                     ) : null}
-                    {nextImage ? (
-                      <button
-                        className="secondary-button"
-                        name="sort_order"
-                        type="submit"
-                        value={nextImage.sort_order + 1}
-                      >
-                        Move right
-                      </button>
-                    ) : null}
-                    {!image.is_primary ? (
-                      <button
-                        className="secondary-button"
-                        formAction={onMakePrimary(image.id)}
-                        type="submit"
-                      >
-                        Set primary
-                      </button>
-                    ) : null}
-                    <button
-                      className="danger-button"
-                      formAction={onDelete(image.id)}
-                      type="submit"
-                    >
-                      Delete
-                    </button>
+                    {image.signedUrl ? (
+                      <a href={image.signedUrl} rel="noreferrer" target="_blank">
+                        <img alt={imageAlt(image)} src={image.signedUrl} />
+                      </a>
+                    ) : (
+                      <span>Preview unavailable</span>
+                    )}
                   </div>
-                ) : null}
-              </form>
-            </article>
-            );
-          })}
-        </div>
-      )}
+
+                  <form className="seller-thumbnail-actions" action={onUpdate(image.id)}>
+                    <input name="alt_text_en" type="hidden" value={image.alt_text_en ?? ""} />
+                    <input name="alt_text_ar" type="hidden" value={image.alt_text_ar ?? ""} />
+                    <span className="seller-thumbnail-meta">
+                      {image.width ?? "?"}x{image.height ?? "?"} · {formatFileSize(image.file_size)}
+                    </span>
+
+                    {canEdit ? (
+                      <div className="seller-icon-row">
+                        {previousImage ? (
+                          <button
+                            aria-label="Move image left"
+                            className="icon-button"
+                            name="sort_order"
+                            title="Move left"
+                            type="submit"
+                            value={previousImage.sort_order - 1}
+                          >
+                            ←
+                          </button>
+                        ) : null}
+                        {nextImage ? (
+                          <button
+                            aria-label="Move image right"
+                            className="icon-button"
+                            name="sort_order"
+                            title="Move right"
+                            type="submit"
+                            value={nextImage.sort_order + 1}
+                          >
+                            →
+                          </button>
+                        ) : null}
+                        <button
+                          aria-label={image.is_primary ? "Primary image" : "Set as primary image"}
+                          className={`icon-button${image.is_primary ? " is-active" : ""}`}
+                          disabled={image.is_primary}
+                          formAction={image.is_primary ? undefined : onMakePrimary(image.id)}
+                          title={image.is_primary ? "Primary image" : "Set primary"}
+                          type="submit"
+                        >
+                          ★
+                        </button>
+                        <button
+                          aria-label="Delete image"
+                          className="icon-button danger-icon-button"
+                          formAction={onDelete(image.id)}
+                          title="Delete"
+                          type="submit"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    ) : null}
+                  </form>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </VendorImageUploadDropzone>
     </section>
   );
 }

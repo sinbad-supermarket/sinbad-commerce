@@ -1,14 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 type VendorImageUploadDropzoneProps = {
   action: (formData: FormData) => void | Promise<void>;
+  children?: ReactNode;
   disabled?: boolean;
 };
 
 export function VendorImageUploadDropzone({
   action,
+  children,
   disabled = false,
 }: VendorImageUploadDropzoneProps) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -20,7 +23,8 @@ export function VendorImageUploadDropzone({
   }
 
   return (
-    <form action={action} className="seller-upload-form" ref={formRef}>
+    <div className="seller-upload-form">
+      <form action={action} className="seller-upload-action-form" ref={formRef}>
       <label
         className={`seller-upload-zone${isDragging ? " is-dragging" : ""}`}
         onDragEnter={(event) => {
@@ -60,6 +64,8 @@ export function VendorImageUploadDropzone({
         <strong>Upload product images</strong>
         <span>Drag images here or click to browse</span>
       </label>
-    </form>
+      </form>
+      {children}
+    </div>
   );
 }
