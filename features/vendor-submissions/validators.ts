@@ -3,6 +3,7 @@ import { productStatuses, type ProductStatus } from "@/features/products/types";
 import {
   editableSubmissionStatuses,
   productAvailabilityOptions,
+  productConditionOptions,
   type ProductSubmissionSnapshot,
   type SubmissionStatus,
 } from "./types";
@@ -10,16 +11,6 @@ import {
 function optionalText(value: FormDataEntryValue | null) {
   const text = String(value ?? "").trim();
   return text.length > 0 ? text : null;
-}
-
-function requiredText(value: FormDataEntryValue | null, label: string) {
-  const text = String(value ?? "").trim();
-
-  if (!text) {
-    throw new Error(`${label} is required.`);
-  }
-
-  return text;
 }
 
 function uniqueValues(values: FormDataEntryValue[]) {
@@ -68,6 +59,16 @@ function parseAvailability(value: FormDataEntryValue | null) {
   }
 
   return availability as (typeof productAvailabilityOptions)[number];
+}
+
+function parseProductCondition(value: FormDataEntryValue | null) {
+  const condition = String(value ?? "new").trim();
+
+  if (!productConditionOptions.includes(condition as (typeof productConditionOptions)[number])) {
+    throw new Error("Product condition is invalid.");
+  }
+
+  return condition as (typeof productConditionOptions)[number];
 }
 
 function parseOptionalUrl(value: FormDataEntryValue | null) {
@@ -146,8 +147,8 @@ export function parseSubmissionSnapshotFormData(
   formData: FormData,
   options: { requireCategories: boolean },
 ): ProductSubmissionSnapshot {
-  const name_en = requiredText(formData.get("name_en"), "English name");
-  const name_ar = requiredText(formData.get("name_ar"), "Arabic name");
+  const name_en = optionalText(formData.get("name_en")) ?? "";
+  const name_ar = optionalText(formData.get("name_ar")) ?? "";
   const rawSlug = String(formData.get("slug") ?? "").trim();
   const slug = rawSlug ? normalizeSlug(rawSlug) : createSlug(name_en);
   const categoryIds = uniqueValues([
@@ -198,8 +199,10 @@ export function parseSubmissionSnapshotFormData(
       video_url: parseOptionalUrl(formData.get("video_url")),
       stock_quantity: stockQuantity,
       availability: parseAvailability(formData.get("availability")),
+      product_condition: parseProductCondition(formData.get("product_condition")),
       specifications: parseSpecifications(formData),
       warranty: optionalText(formData.get("warranty")),
+      brand_request: optionalText(formData.get("brand_request")),
       suggested_category: optionalText(formData.get("suggested_category")),
       intended_status: parseIntendedStatus(formData.get("intended_status")),
     },
@@ -212,6 +215,10 @@ export function parseSubmissionSnapshotFormData(
 }
 
 export function assertSnapshotReadyForReview(snapshot: ProductSubmissionSnapshot) {
+  if (!snapshot.product.name_en || !snapshot.product.name_ar) {
+    throw new Error("English and Arabic product names are required before submitting.");
+  }
+
   if (!snapshot.product.short_description_en || !snapshot.product.short_description_ar) {
     throw new Error("English and Arabic short descriptions are required before submitting.");
   }

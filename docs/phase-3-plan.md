@@ -278,6 +278,7 @@ The vendor product submission flow now collects:
 - stock quantity
 - SKU and barcode
 - availability: `in_stock`, `out_of_stock`, or `preorder`
+- product condition: `new`, `refurbished`, or `used`
 - optional key/value product specifications
 - optional warranty text
 - bilingual full descriptions
@@ -298,6 +299,9 @@ Image rules:
 Snapshot and approval behavior:
 
 - Vendor edits still write only to `product_review_submissions.snapshot`.
+- `/vendor/products/new` creates a private editable submission workspace so
+  vendors can upload staged images immediately without saving product details
+  first.
 - Vendors cannot mutate canonical `products`, `product_categories`, or
   `product_images` directly.
 - Saving product fields preserves existing staged images in the snapshot.
@@ -313,8 +317,22 @@ Canonical `products` now supports:
 - `video_url`
 - `stock_quantity`
 - `availability`
+- `product_condition`
 - `specifications`
 - `warranty`
+
+UX refinement:
+
+- Category and subcategory use single searchable selector controls rather than
+  separate search inputs plus dropdowns.
+- Subcategory remains disabled until a parent category is selected.
+- Specifications start empty and vendors add rows only when needed.
+- The form is grouped as Images, Basic Product Information, Pricing &
+  Inventory, Specifications & Warranty, Full Description, and Actions.
+- Submit For Review is the primary action; Save Draft remains available for
+  incomplete work.
+- Brand selection uses a searchable suggestion input plus a snapshot-only
+  Request New Brand field. A global brand catalog remains deferred.
 
 The public catalog remains governed by the existing public visibility rules:
 

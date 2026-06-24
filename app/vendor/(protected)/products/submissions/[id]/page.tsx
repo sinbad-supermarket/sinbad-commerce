@@ -83,7 +83,9 @@ export default async function VendorSubmissionPage({
     <VendorShell currentVendor={currentVendor} memberships={memberships}>
       <div className="page-header">
         <div>
-          <h2 className="page-title">{submission.snapshot.product.name_en}</h2>
+          <h2 className="page-title">
+            {submission.snapshot.product.name_en || "New product draft"}
+          </h2>
           <p className="page-copy">
             {submission.change_type} submission ·{" "}
             <VendorSubmissionStatus status={submission.status} />
@@ -118,9 +120,9 @@ export default async function VendorSubmissionPage({
         />
 
         {canEdit ? (
-          <form action={submitSubmission}>
+          <form className="submission-actions" action={submitSubmission}>
             <button className="primary-button" type="submit">
-              Submit for review
+              Submit For Review
             </button>
           </form>
         ) : (

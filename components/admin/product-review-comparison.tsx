@@ -29,6 +29,7 @@ function priceValue(value: string | number | null | undefined) {
 export function ProductReviewComparison({ review }: ProductReviewComparisonProps) {
   const submitted = review.snapshot.product;
   const canonical = review.canonicalProduct;
+  const categoryById = new Map(review.snapshotCategories.map((category) => [category.id, category]));
   const rows: ComparisonRow[] = [
     {
       label: "Slug",
@@ -89,6 +90,16 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
       label: "Brand",
       canonical: displayValue(canonical?.brand_name),
       submitted: displayValue(submitted.brand_name),
+    },
+    {
+      label: "Brand request",
+      canonical: "None",
+      submitted: displayValue(submitted.brand_request),
+    },
+    {
+      label: "Condition",
+      canonical: displayValue(canonical?.product_condition),
+      submitted: displayValue(submitted.product_condition),
     },
     {
       label: "Video URL",
@@ -178,14 +189,27 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Category ID</th>
+                  <th>Category</th>
+                  <th>Type</th>
                   <th>Primary</th>
                 </tr>
               </thead>
               <tbody>
                 {review.snapshot.categories.map((category) => (
                   <tr key={category.category_id}>
-                    <td>{category.category_id}</td>
+                    <td>
+                      {categoryById.get(category.category_id)?.name_en ?? category.category_id}
+                      {categoryById.get(category.category_id)?.name_ar ? (
+                        <div className="field-help" dir="rtl">
+                          {categoryById.get(category.category_id)?.name_ar}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td>
+                      {categoryById.get(category.category_id)?.parent_id
+                        ? "Subcategory"
+                        : "Category"}
+                    </td>
                     <td>{category.is_primary ? "Yes" : "No"}</td>
                   </tr>
                 ))}

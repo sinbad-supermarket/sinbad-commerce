@@ -45,6 +45,10 @@ export const productAvailabilityOptions = [
 
 export type ProductAvailability = (typeof productAvailabilityOptions)[number];
 
+export const productConditionOptions = ["new", "refurbished", "used"] as const;
+
+export type ProductCondition = (typeof productConditionOptions)[number];
+
 export type ProductSpecification = {
   key: string;
   value: string;
@@ -68,8 +72,10 @@ export type ProductSubmissionSnapshot = {
     video_url: string | null;
     stock_quantity: number | null;
     availability: ProductAvailability;
+    product_condition: ProductCondition;
     specifications: ProductSpecification[];
     warranty: string | null;
+    brand_request: string | null;
     suggested_category: string | null;
     intended_status: ProductStatus;
   };

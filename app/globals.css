@@ -491,6 +491,7 @@ a {
   display: flex;
   justify-content: center;
   overflow: hidden;
+  position: relative;
 }
 
 .image-card-preview a,
@@ -502,6 +503,31 @@ a {
 
 .image-card-preview img {
   object-fit: contain;
+}
+
+.primary-image-badge {
+  background: #111827;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  left: 10px;
+  padding: 5px 8px;
+  position: absolute;
+  top: 10px;
+  z-index: 1;
+}
+
+.submission-actions {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 18px;
 }
 
 .image-item {
@@ -523,6 +549,7 @@ a {
   justify-content: center;
   min-height: 140px;
   padding: 16px;
+  position: relative;
   text-align: center;
 }
 

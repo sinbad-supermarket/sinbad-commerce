@@ -144,6 +144,7 @@ export function VendorSubmissionImages({
           {orderedImages.map((image) => (
             <article className="image-card" key={image.id}>
               <div className="image-card-preview">
+                {image.is_primary ? <span className="primary-image-badge">★ Primary</span> : null}
                 {image.signedUrl ? (
                   <a href={image.signedUrl} rel="noreferrer" target="_blank">
                     <img

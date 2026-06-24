@@ -34,6 +34,7 @@ export function ProductReviewImages({ images }: ProductReviewImagesProps) {
           {orderedImages.map((image) => (
             <article className="image-item" key={image.id}>
               <div className="image-preview">
+                {image.is_primary ? <span className="primary-image-badge">★ Primary</span> : null}
                 {image.signedUrl ? (
                   <a
                     className="image-preview-link"

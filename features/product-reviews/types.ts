@@ -32,11 +32,19 @@ export type ReviewCanonicalProduct = {
   video_url: string | null;
   stock_quantity: number | null;
   availability: string | null;
+  product_condition: string | null;
   specifications: Array<{ key: string; value: string }> | null;
   warranty: string | null;
   status: ProductStatus;
   review_status: string;
   updated_at: string;
+};
+
+export type ReviewCategorySummary = {
+  id: string;
+  name_en: string;
+  name_ar: string;
+  parent_id: string | null;
 };
 
 export type ProductReviewListItem = {
@@ -55,4 +63,5 @@ export type ProductReviewListItem = {
 export type ProductReviewDetail = ProductReviewSubmissionRow & {
   vendor: ReviewVendorSummary | null;
   canonicalProduct: ReviewCanonicalProduct | null;
+  snapshotCategories: ReviewCategorySummary[];
 };

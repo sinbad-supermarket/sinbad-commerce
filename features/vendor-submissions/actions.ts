@@ -15,6 +15,8 @@ import { requireSelectedVendor } from "@/lib/auth/require-vendor";
 import type { ProductStatus } from "@/features/products/types";
 import {
   activeUpdateSubmissionStatuses,
+  type ProductAvailability,
+  type ProductCondition,
   type ProductReviewSubmissionRow,
   type ProductSubmissionSnapshot,
   type StagedSubmissionImage,
@@ -124,6 +126,37 @@ function submissionDetailPath(submissionId: string) {
   return `/vendor/products/submissions/${submissionId}`;
 }
 
+function blankSubmissionSnapshot(slug: string): ProductSubmissionSnapshot {
+  return {
+    version: 1,
+    product: {
+      slug,
+      sku: null,
+      barcode: null,
+      name_en: "",
+      name_ar: "",
+      short_description_en: null,
+      short_description_ar: null,
+      description_en: null,
+      description_ar: null,
+      price: null,
+      sale_price: null,
+      brand_name: null,
+      video_url: null,
+      stock_quantity: null,
+      availability: "in_stock",
+      product_condition: "new",
+      specifications: [],
+      warranty: null,
+      brand_request: null,
+      suggested_category: null,
+      intended_status: "active",
+    },
+    categories: [],
+    images: [],
+  };
+}
+
 function snapshotFromCanonicalProduct(
   product: {
     slug: string;
@@ -141,6 +174,7 @@ function snapshotFromCanonicalProduct(
     video_url?: string | null;
     stock_quantity?: number | null;
     availability?: string | null;
+    product_condition?: string | null;
     specifications?: Array<{ key: string; value: string }> | null;
     warranty?: string | null;
     status: string;
@@ -171,9 +205,14 @@ function snapshotFromCanonicalProduct(
       availability:
         product.availability === "out_of_stock" || product.availability === "preorder"
           ? product.availability
-          : "in_stock",
+          : ("in_stock" satisfies ProductAvailability),
+      product_condition:
+        product.product_condition === "refurbished" || product.product_condition === "used"
+          ? product.product_condition
+          : ("new" satisfies ProductCondition),
       specifications: product.specifications ?? [],
       warranty: product.warranty ?? null,
+      brand_request: null,
       suggested_category: null,
       intended_status: product.status as ProductStatus,
     },
@@ -294,6 +333,43 @@ export async function createProductSubmissionDraft(formData: FormData) {
     submissionErrorRedirect(
       "/vendor/products/new",
       error instanceof Error ? error.message : "Unable to create submission draft.",
+    );
+  }
+
+  redirect(`/vendor/products/submissions/${submissionId}`);
+}
+
+export async function createBlankProductSubmissionDraft() {
+  const { currentVendor } = await requireSelectedVendor();
+  let submissionId: string;
+
+  try {
+    assertVendorCanWrite(currentVendor.vendor.status);
+    const userId = await getCurrentUserId();
+    const snapshot = blankSubmissionSnapshot(`draft-${randomUUID()}`);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("product_review_submissions")
+      .insert({
+        vendor_id: currentVendor.vendor.id,
+        product_id: null,
+        submitted_by: userId,
+        change_type: "create",
+        status: "draft",
+        snapshot,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    submissionId = data.id;
+  } catch (error) {
+    submissionErrorRedirect(
+      "/vendor/products",
+      error instanceof Error ? error.message : "Unable to create product workspace.",
     );
   }
 

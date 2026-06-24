@@ -29,6 +29,7 @@ export function ProductReviewSummary({ review }: ProductReviewSummaryProps) {
       <p>Product: {product.name_en}</p>
       <p dir="rtl">{product.name_ar}</p>
       <p>Brand: {product.brand_name ?? "None"}</p>
+      <p>Condition: {product.product_condition ?? "new"}</p>
       <p>Availability: {product.availability}</p>
       <p>Regular price: {product.price ?? "None"} KWD</p>
       <p>Sale price: {product.sale_price ?? "None"} KWD</p>

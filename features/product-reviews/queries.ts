@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   ProductReviewDetail,
+  ReviewCategorySummary,
   ProductReviewListItem,
   ReviewCanonicalProduct,
   ReviewVendorSummary,
@@ -59,7 +60,7 @@ async function getCanonicalProduct(productId: string | null) {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,sale_price,brand_name,video_url,stock_quantity,availability,specifications,warranty,status,review_status,updated_at",
+      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,sale_price,brand_name,video_url,stock_quantity,availability,product_condition,specifications,warranty,status,review_status,updated_at",
     )
     .eq("id", productId)
     .maybeSingle();
@@ -69,6 +70,24 @@ async function getCanonicalProduct(productId: string | null) {
   }
 
   return data as ReviewCanonicalProduct | null;
+}
+
+async function listReviewCategories(categoryIds: string[]) {
+  if (categoryIds.length === 0) {
+    return [];
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name_en,name_ar,parent_id")
+    .in("id", categoryIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as ReviewCategorySummary[];
 }
 
 export async function getProductReviewById(reviewId: string) {
@@ -88,11 +107,16 @@ export async function getProductReviewById(reviewId: string) {
   }
 
   const row = data as ReviewSubmissionRow;
-  const canonicalProduct = await getCanonicalProduct(row.product_id);
+  const categoryIds = row.snapshot.categories.map((category) => category.category_id);
+  const [canonicalProduct, snapshotCategories] = await Promise.all([
+    getCanonicalProduct(row.product_id),
+    listReviewCategories(categoryIds),
+  ]);
 
   return {
     ...row,
     vendor: firstVendor(row),
     canonicalProduct,
+    snapshotCategories,
   } satisfies ProductReviewDetail;
 }
