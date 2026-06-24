@@ -61,20 +61,44 @@ export function VendorApplicationForm({
       {error ? <p className="form-error">{error}</p> : null}
 
       <fieldset className="fieldset">
-        <legend>Owner / Responsible Person</legend>
+        <legend>Company Info</legend>
         <div className="form-grid">
           <label className="field">
-            <span>Owner full name</span>
+            <span>Company name</span>
+            <input name="legal_business_name" required />
+          </label>
+          <label className="field">
+            <span>Commercial license number</span>
+            <input name="commercial_license_number" required />
+          </label>
+        </div>
+        <div className="form-grid">
+          <label className="field">
+            <span>Tax or VAT number</span>
+            <input name="tax_or_vat_number" />
+          </label>
+          <label className="field">
+            <span>Company notes</span>
+            <textarea name="company_notes" />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="fieldset">
+        <legend>Owner Info</legend>
+        <div className="form-grid">
+          <label className="field">
+            <span>Full name</span>
             <input name="owner_full_name" required />
           </label>
           <label className="field">
-            <span>Owner phone</span>
+            <span>Phone</span>
             <input name="owner_phone" required />
           </label>
         </div>
         <div className="form-grid">
           <label className="field">
-            <span>Owner email</span>
+            <span>Email</span>
             <input name="owner_email" type="email" required />
           </label>
           <label className="field">
@@ -105,100 +129,80 @@ export function VendorApplicationForm({
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend>Legal Business / Company</legend>
+        <legend>Store Info</legend>
         <div className="form-grid">
           <label className="field">
-            <span>Legal business name</span>
-            <input name="legal_business_name" required />
+            <span>Store name (English)</span>
+            <input name="store_name_en" required />
           </label>
           <label className="field">
-            <span>Commercial license number</span>
-            <input name="commercial_license_number" required />
+            <span>Store name (Arabic)</span>
+            <input name="store_name_ar" dir="rtl" required />
           </label>
         </div>
         <label className="field">
-          <span>Business address</span>
-          <textarea name="business_address" required />
+          <span>Store URL slug</span>
+          <input name="proposed_store_slug" required />
+        </label>
+        <label className="field">
+          <span>Product categories</span>
+          <textarea name="product_categories_description" required />
         </label>
         <div className="form-grid">
           <label className="field">
-            <span>Tax or VAT number</span>
-            <input name="tax_or_vat_number" />
+            <span>Short store description (English)</span>
+            <textarea name="short_store_description_en" required />
           </label>
           <label className="field">
-            <span>Company notes</span>
-            <textarea name="company_notes" />
+            <span>Short store description (Arabic)</span>
+            <textarea name="short_store_description_ar" dir="rtl" required />
           </label>
         </div>
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend>Store / Merchant Operations</legend>
-        <div className="form-grid">
-          <label className="field">
-            <span>Store English name</span>
-            <input name="store_name_en" required />
-          </label>
-          <label className="field">
-            <span>Store Arabic name</span>
-            <input name="store_name_ar" dir="rtl" required />
-          </label>
-        </div>
-        <label className="field">
-          <span>Proposed store slug</span>
-          <input name="proposed_store_slug" required />
-        </label>
+        <legend>Operations / Address</legend>
         <div className="form-grid">
           <label className="field">
             <span>Store phone</span>
             <input name="store_phone" required />
           </label>
           <label className="field">
-            <span>Store WhatsApp</span>
+            <span>WhatsApp</span>
             <input name="store_whatsapp" required />
           </label>
         </div>
         <div className="form-grid">
           <label className="field">
-            <span>Store order email</span>
+            <span>Order email</span>
             <input name="store_order_email" type="email" required />
           </label>
           <label className="field">
-            <span>Store area</span>
+            <span>City / Area</span>
             <input name="store_area" required />
           </label>
         </div>
         <label className="field">
-          <span>Store fulfillment address</span>
-          <textarea name="store_fulfillment_address" required />
+          <span>Business address</span>
+          <textarea name="business_address" required />
         </label>
         <label className="field">
-          <span>Product categories description</span>
-          <textarea name="product_categories_description" required />
+          <span>Pickup / fulfillment address</span>
+          <textarea name="store_fulfillment_address" required />
         </label>
         <div className="form-grid">
           <label className="field">
-            <span>Short English store description</span>
-            <textarea name="short_store_description_en" required />
-          </label>
-          <label className="field">
-            <span>Short Arabic store description</span>
-            <textarea name="short_store_description_ar" dir="rtl" required />
-          </label>
-        </div>
-        <div className="form-grid">
-          <label className="field">
-            <span>Store business hours</span>
+            <span>Business hours</span>
             <input name="store_business_hours" />
           </label>
           <label className="field">
-            <span>Expected daily order capacity</span>
+            <span>Daily order capacity</span>
             <input name="expected_daily_order_capacity" inputMode="numeric" />
           </label>
         </div>
         <div className="form-grid">
           <label className="field">
-            <span>Delivery handled by</span>
+            <span>Delivery preference</span>
             <select name="delivery_handled_by" defaultValue="">
               <option value="">Not sure yet</option>
               {deliveryHandledByOptions.map((option) => (
@@ -209,14 +213,14 @@ export function VendorApplicationForm({
             </select>
           </label>
           <label className="field">
-            <span>Return policy notes</span>
+            <span>Return policy</span>
             <textarea name="return_policy_notes" />
           </label>
         </div>
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend>Bank / Settlement Details</legend>
+        <legend>Payout / Bank Info</legend>
         <div className="form-grid">
           <label className="field">
             <span>Bank name</span>
@@ -244,7 +248,7 @@ export function VendorApplicationForm({
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend>Documents</legend>
+        <legend>Document Uploads</legend>
         <p className="field-help">
           PDF, JPG, PNG, or WebP. Max 3 MB per file. Max 10 MB total.
         </p>
@@ -288,8 +292,20 @@ export function VendorApplicationForm({
         </div>
       </fieldset>
 
+      <fieldset className="fieldset">
+        <legend>Agreement</legend>
+        <label className="checkbox-field">
+          <input name="accept_commission" type="checkbox" required />
+          <span>I accept the 5% Sinbad commission for V1 vendor sales.</span>
+        </label>
+        <label className="checkbox-field">
+          <input name="accept_sinbad_delivery" type="checkbox" required />
+          <span>I accept Sinbad-managed delivery in V1.</span>
+        </label>
+      </fieldset>
+
       <button className="primary-button" type="submit">
-        Submit application
+        Submit Application
       </button>
     </form>
   );

@@ -173,6 +173,12 @@ function optionalDocument(value: FormDataEntryValue | null, label: string) {
   return requiredDocument(value, label);
 }
 
+function requiredAgreement(value: FormDataEntryValue | null, message: string) {
+  if (value !== "on") {
+    throw new Error(message);
+  }
+}
+
 function signatoryDiffersFromOwner(ownerName: string, signatoryName: string | null) {
   return Boolean(
     signatoryName &&
@@ -221,6 +227,15 @@ export function parseVendorApplicationFormData(formData: FormData): {
   if (totalDocumentSize > maxVendorApplicationDocumentTotalSize) {
     throw new Error(vendorApplicationDocumentTotalSizeMessage);
   }
+
+  requiredAgreement(
+    formData.get("accept_commission"),
+    "Please accept the 5% Sinbad commission for V1 vendor sales.",
+  );
+  requiredAgreement(
+    formData.get("accept_sinbad_delivery"),
+    "Please accept Sinbad-managed delivery in V1.",
+  );
 
   return {
     input: {

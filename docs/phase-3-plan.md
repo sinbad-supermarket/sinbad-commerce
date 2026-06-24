@@ -115,12 +115,16 @@ Admin order management uses normal Supabase server clients with admin RLS polici
 Implemented vendor application intake without adding customer accounts, payments,
 shipping, inventory, or new commerce workflows.
 
-Public applicants submit at `/vendors/apply` with three separated sections:
+Public applicants submit at `/vendors/apply` with a simplified flow aligned to
+the public Sinbad vendor application:
 
-- Owner / Responsible Person data for legal, compliance, and account responsibility.
-- Legal Business / Company data for license and company review.
-- Store / Merchant Operational data for future public store setup and order routing.
-- Bank / Settlement Details for future vendor settlement and payout workflows.
+- Company Info for license and company review.
+- Owner Info for legal, compliance, and account responsibility.
+- Store Info for future public store setup.
+- Operations / Address for order routing and fulfillment details.
+- Payout / Bank Info for future vendor settlement workflows.
+- Document Uploads for private application documents.
+- Agreement for V1 commission and Sinbad-managed delivery acknowledgements.
 
 Owner and legal data are private admin records and are not displayed publicly. Store
 profile fields are used only after admin approval creates a vendor.
@@ -138,8 +142,14 @@ Required documents:
 - authorization document when the authorized signatory differs from the owner
 - optional bank document
 
-Documents are private, limited to PDF/JPG/PNG/WebP, and capped at 5 MB each.
-Signed document URLs are generated only after an admin guard passes.
+Documents are private, limited to PDF/JPG/PNG/WebP, capped at 3 MB each, and
+capped at 10 MB total per application. Signed document URLs are generated only
+after an admin guard passes.
+
+The public form requires applicants to acknowledge:
+
+- the 5% Sinbad commission for V1 vendor sales
+- Sinbad-managed delivery in V1
 
 Admin review is available at:
 
