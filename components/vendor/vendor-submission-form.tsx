@@ -39,7 +39,7 @@ function selectedCategoryPair(categories: CategoryRow[], snapshot?: ProductSubmi
 }
 
 function categoryLabel(category: CategoryRow) {
-  return `${category.name_en} / ${category.name_ar}`;
+  return category.name_en;
 }
 
 const brandSuggestions = [

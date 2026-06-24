@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { uploadSubmissionImageAsync } from "@/features/vendor-submissions/image-management";
+import {
+  reorderSubmissionAdditionalImagesAsync,
+  uploadSubmissionImageAsync,
+} from "@/features/vendor-submissions/image-management";
 
 type SubmissionImagesRouteContext = {
   params: Promise<{
@@ -35,6 +38,27 @@ export async function POST(request: Request, context: SubmissionImagesRouteConte
   } catch (error) {
     return NextResponse.json(
       { error: friendlyUploadError(error) },
+      { status: 400 },
+    );
+  }
+}
+
+export async function PATCH(request: Request, context: SubmissionImagesRouteContext) {
+  try {
+    const { id } = await context.params;
+    const body = (await request.json()) as { imageIds?: unknown };
+    const imageIds = Array.isArray(body.imageIds)
+      ? body.imageIds.filter((imageId): imageId is string => typeof imageId === "string")
+      : [];
+    const images = await reorderSubmissionAdditionalImagesAsync(id, imageIds);
+
+    return NextResponse.json({ images });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to reorder images.",
+      },
       { status: 400 },
     );
   }

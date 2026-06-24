@@ -224,3 +224,38 @@ export async function deleteSubmissionImageAsync(
 
   return createStagedSubmissionImageSignedItems(nextImages);
 }
+
+export async function reorderSubmissionAdditionalImagesAsync(
+  submissionId: string,
+  imageIds: string[],
+): Promise<StagedSubmissionImageListItem[]> {
+  const { currentVendor, submission } = await getOwnEditableSubmission(submissionId);
+  const additionalImages = submission.snapshot.images.filter((image) => !image.is_primary);
+  const additionalImageIds = new Set(additionalImages.map((image) => image.id));
+
+  if (imageIds.length !== additionalImages.length) {
+    throw new Error("Image order is incomplete.");
+  }
+
+  if (new Set(imageIds).size !== imageIds.length) {
+    throw new Error("Image order contains duplicates.");
+  }
+
+  if (!imageIds.every((imageId) => additionalImageIds.has(imageId))) {
+    throw new Error("Only additional images can be reordered.");
+  }
+
+  const nextSortOrder = new Map(imageIds.map((imageId, index) => [imageId, index + 1]));
+  const nextImages = submission.snapshot.images.map((image) =>
+    image.is_primary
+      ? { ...image, sort_order: 0 }
+      : { ...image, sort_order: nextSortOrder.get(image.id) ?? image.sort_order },
+  );
+
+  await updateSubmissionSnapshot(submission.id, currentVendor.vendor.id, {
+    ...submission.snapshot,
+    images: nextImages,
+  });
+
+  return createStagedSubmissionImageSignedItems(nextImages);
+}

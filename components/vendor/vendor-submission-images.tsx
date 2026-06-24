@@ -1,6 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { StagedSubmissionImageListItem } from "@/features/vendor-submissions/types";
 import { VendorImageUploadDropzone } from "./vendor-image-upload-dropzone";
 
@@ -50,9 +69,20 @@ export function VendorSubmissionImages({
   const [currentImages, setCurrentImages] = useState(images);
   const [error, setError] = useState<string | null>(null);
   const [uploadingIds, setUploadingIds] = useState<string[]>([]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   const orderedImages = useMemo(() => sortedImages(currentImages), [currentImages]);
   const primaryImage = orderedImages.find((image) => image.is_primary) ?? null;
   const additionalImages = orderedImages.filter((image) => !image.is_primary);
+  const additionalImageIds = additionalImages.map((image) => image.id);
 
   async function uploadImage(file: File, imageRole: "primary" | "additional") {
     const tempId = `temp-${crypto.randomUUID()}`;
@@ -146,6 +176,72 @@ export function VendorSubmissionImages({
     }
   }
 
+  async function reorderAdditionalImages(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !canEdit) {
+      return;
+    }
+
+    const oldIndex = additionalImageIds.indexOf(String(active.id));
+    const newIndex = additionalImageIds.indexOf(String(over.id));
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const previousImages = currentImages;
+    const reorderedAdditionalImages = arrayMove(additionalImages, oldIndex, newIndex).map(
+      (image, index) => ({
+        ...image,
+        sort_order: index + 1,
+      }),
+    );
+    const reorderedAdditionalById = new Map(
+      reorderedAdditionalImages.map((image) => [image.id, image]),
+    );
+    const nextImages = currentImages.map((image) =>
+      image.is_primary
+        ? image
+        : (reorderedAdditionalById.get(image.id) ?? image),
+    );
+
+    setError(null);
+    setCurrentImages(nextImages);
+
+    try {
+      const response = await fetch(
+        `/vendor/products/submissions/${submissionId}/images`,
+        {
+          body: JSON.stringify({
+            imageIds: reorderedAdditionalImages.map((image) => image.id),
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "PATCH",
+        },
+      );
+      const result = (await response.json()) as {
+        error?: string;
+        images?: StagedSubmissionImageListItem[];
+      };
+
+      if (!response.ok || !result.images) {
+        throw new Error(result.error ?? "Unable to reorder images.");
+      }
+
+      setCurrentImages(result.images);
+    } catch (reorderError) {
+      setCurrentImages(previousImages);
+      setError(
+        reorderError instanceof Error
+          ? reorderError.message
+          : "Unable to reorder images.",
+      );
+    }
+  }
+
   return (
     <section className="section-stack">
       <div>
@@ -210,17 +306,25 @@ export function VendorSubmissionImages({
           title="Upload additional images"
         >
           {additionalImages.length > 0 ? (
-            <div className="seller-thumbnail-grid">
-              {additionalImages.map((image) => (
-                <ImageThumbnail
-                  canEdit={canEdit}
-                  image={image}
-                  isUploading={uploadingIds.includes(image.id)}
-                  key={image.id}
-                  onDelete={deleteImage}
-                />
-              ))}
-            </div>
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragEnd={reorderAdditionalImages}
+              sensors={sensors}
+            >
+              <SortableContext items={additionalImageIds} strategy={rectSortingStrategy}>
+                <div className="seller-thumbnail-grid">
+                  {additionalImages.map((image) => (
+                    <SortableImageThumbnail
+                      canEdit={canEdit}
+                      image={image}
+                      isUploading={uploadingIds.includes(image.id)}
+                      key={image.id}
+                      onDelete={deleteImage}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <p className="empty-state">Please upload at least one additional image.</p>
           )}
@@ -230,7 +334,7 @@ export function VendorSubmissionImages({
   );
 }
 
-function ImageThumbnail({
+function SortableImageThumbnail({
   canEdit,
   image,
   isUploading,
@@ -241,8 +345,61 @@ function ImageThumbnail({
   isUploading: boolean;
   onDelete: (imageId: string) => void;
 }) {
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({
+    disabled: !canEdit || isUploading,
+    id: image.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <article className="seller-thumbnail-card">
+    <div
+      className={isDragging ? "seller-sortable-thumbnail is-dragging" : "seller-sortable-thumbnail"}
+      ref={setNodeRef}
+      style={style}
+    >
+      <ImageThumbnail
+        canEdit={canEdit}
+        dragAttributes={attributes}
+        dragListeners={listeners}
+        image={image}
+        isUploading={isUploading}
+        onDelete={onDelete}
+      />
+    </div>
+  );
+}
+
+function ImageThumbnail({
+  canEdit,
+  dragAttributes,
+  dragListeners,
+  image,
+  isUploading,
+  onDelete,
+}: {
+  canEdit: boolean;
+  dragAttributes?: DraggableAttributes;
+  dragListeners?: DraggableSyntheticListeners;
+  image: StagedSubmissionImageListItem;
+  isUploading: boolean;
+  onDelete: (imageId: string) => void;
+}) {
+  return (
+    <article
+      className="seller-thumbnail-card"
+      {...dragAttributes}
+      {...dragListeners}
+    >
       <div className="seller-thumbnail-preview">
         {image.is_primary ? (
           <span aria-label="Primary image" className="seller-primary-star">
@@ -253,7 +410,11 @@ function ImageThumbnail({
           <button
             aria-label="Delete image"
             className="icon-button danger-icon-button seller-trash-button"
-            onClick={() => onDelete(image.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(image.id);
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
             title="Delete"
             type="button"
           >

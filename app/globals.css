@@ -556,9 +556,29 @@ a {
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 8px;
+  cursor: grab;
   display: grid;
   gap: 8px;
   padding: 8px;
+}
+
+.seller-thumbnail-card:active {
+  cursor: grabbing;
+}
+
+.seller-sortable-thumbnail {
+  touch-action: manipulation;
+}
+
+.seller-sortable-thumbnail.is-dragging {
+  opacity: 0.72;
+  position: relative;
+  z-index: 3;
+}
+
+.seller-sortable-thumbnail.is-dragging .seller-thumbnail-card {
+  border-color: #0f766e;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
 }
 
 .seller-thumbnail-preview {
