@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import type { StagedSubmissionImageListItem } from "@/features/vendor-submissions/types";
 
 type VendorSubmissionImagesProps = {
@@ -11,9 +8,6 @@ type VendorSubmissionImagesProps = {
   onUpdate: (imageId: string) => (formData: FormData) => void | Promise<void>;
   uploadAction: (formData: FormData) => void | Promise<void>;
 };
-
-const minDimension = 330;
-const maxDimension = 5000;
 
 function formatFileSize(fileSize: number | null) {
   if (!fileSize) {
@@ -41,45 +35,7 @@ export function VendorSubmissionImages({
   onUpdate,
   uploadAction,
 }: VendorSubmissionImagesProps) {
-  const [clientError, setClientError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const orderedImages = sortedImages(images);
-
-  function validateClientImage(file: File | undefined) {
-    setClientError(null);
-    setPreviewUrl(null);
-
-    if (!file) {
-      return;
-    }
-
-    if (images.length >= 8) {
-      setClientError("A product can have at most 8 images. Delete one before uploading another.");
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      if (
-        image.width < minDimension ||
-        image.height < minDimension ||
-        image.width > maxDimension ||
-        image.height > maxDimension
-      ) {
-        setClientError("Image dimensions must be between 330x330 and 5000x5000 pixels.");
-        URL.revokeObjectURL(url);
-        return;
-      }
-
-      setPreviewUrl(url);
-    };
-    image.onerror = () => {
-      setClientError("Unable to preview this image. Please choose another file.");
-      URL.revokeObjectURL(url);
-    };
-    image.src = url;
-  }
 
   return (
     <section className="section-stack">
@@ -106,17 +62,10 @@ export function VendorSubmissionImages({
             <input
               accept="image/jpeg,image/png,image/webp"
               name="image"
-              onChange={(event) => validateClientImage(event.target.files?.[0])}
               required
               type="file"
             />
           </label>
-          {previewUrl ? (
-            <div className="image-upload-preview">
-              <img alt="Selected upload preview" src={previewUrl} />
-            </div>
-          ) : null}
-          {clientError ? <p className="form-error">{clientError}</p> : null}
           <div className="form-grid">
             <label className="field">
               <span>English alt text</span>
