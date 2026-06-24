@@ -45,12 +45,12 @@ export default async function VendorProductsPage({
         <div>
           <h2 className="page-title">Products</h2>
           <p className="page-copy">
-            Manage product drafts and review submissions for this vendor.
+            Add products and track review submissions for this vendor.
           </p>
         </div>
         {canWrite ? (
           <Link className="primary-link" href="/vendor/products/new">
-            New product draft
+            Add Product
           </Link>
         ) : null}
       </div>
@@ -70,7 +70,6 @@ export default async function VendorProductsPage({
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Slug</th>
                     <th>Status</th>
                     <th>Review</th>
                     <th>Updated</th>
@@ -91,7 +90,6 @@ export default async function VendorProductsPage({
                             {product.name_ar}
                           </span>
                         </td>
-                        <td>{product.slug}</td>
                         <td>{product.status}</td>
                         <td>{product.review_status}</td>
                         <td>{formatDate(product.updated_at)}</td>

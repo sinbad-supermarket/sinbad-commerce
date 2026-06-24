@@ -1,4 +1,5 @@
 import type { StagedSubmissionImageListItem } from "@/features/vendor-submissions/types";
+import { VendorImageUploadDropzone } from "./vendor-image-upload-dropzone";
 
 type VendorSubmissionImagesProps = {
   canEdit: boolean;
@@ -18,13 +19,7 @@ function formatFileSize(fileSize: number | null) {
 }
 
 function sortedImages(images: StagedSubmissionImageListItem[]) {
-  return [...images].sort((a, b) => {
-    if (a.is_primary !== b.is_primary) {
-      return a.is_primary ? -1 : 1;
-    }
-
-    return a.sort_order - b.sort_order;
-  });
+  return [...images].sort((a, b) => a.sort_order - b.sort_order);
 }
 
 export function VendorSubmissionImages({
@@ -42,9 +37,8 @@ export function VendorSubmissionImages({
       <div>
         <h2 className="section-title">Product Images</h2>
         <p className="field-help">
-          Upload 2 to 8 private staged images. Images publish only after admin approval.
-          Use JPEG, PNG, or WebP up to 5 MB, between 330x330 and 5000x5000 pixels.
-          To replace an image, delete it and upload the replacement.
+          Add 2-8 images. Use JPEG, PNG, or WebP up to 5 MB. Images must be
+          between 330x330 and 5000x5000 pixels.
         </p>
       </div>
 
@@ -52,45 +46,22 @@ export function VendorSubmissionImages({
         <span className={images.length >= 2 ? "status-active" : "status-muted"}>
           {images.length}/8 images
         </span>
-        <span className="field-help">Minimum 2 images required before review.</span>
+        <span className="field-help">First image in the list is shown first after approval.</span>
       </div>
 
       {canEdit ? (
-        <form className="admin-form wide-form" action={uploadAction}>
-          <label className="field">
-            <span>Image</span>
-            <input
-              accept="image/jpeg,image/png,image/webp"
-              name="image"
-              required
-              type="file"
-            />
-          </label>
-          <div className="form-grid">
-            <label className="field">
-              <span>English alt text</span>
-              <input name="alt_text_en" />
-            </label>
-            <label className="field">
-              <span>Arabic alt text</span>
-              <input name="alt_text_ar" dir="rtl" />
-            </label>
-          </div>
-          <label className="field">
-            <span>Sort order</span>
-            <input name="sort_order" defaultValue={images.length} required />
-          </label>
-          <button className="primary-button" disabled={images.length >= 8} type="submit">
-            Upload staged image
-          </button>
-        </form>
+        <VendorImageUploadDropzone action={uploadAction} disabled={images.length >= 8} />
       ) : null}
 
       {orderedImages.length === 0 ? (
-        <p className="empty-state">No staged images are attached to this submission.</p>
+        <p className="empty-state">Upload at least 2 product images to submit for review.</p>
       ) : (
         <div className="image-card-grid">
-          {orderedImages.map((image) => (
+          {orderedImages.map((image, index) => {
+            const previousImage = orderedImages[index - 1];
+            const nextImage = orderedImages[index + 1];
+
+            return (
             <article className="image-card" key={image.id}>
               <div className="image-card-preview">
                 {image.is_primary ? <span className="primary-image-badge">★ Primary</span> : null}
@@ -108,48 +79,35 @@ export function VendorSubmissionImages({
 
               <form className="image-details" action={onUpdate(image.id)}>
                 <div className="image-meta">
-                  <span className={image.is_primary ? "status-active" : "status-muted"}>
-                    {image.is_primary ? "Primary" : "Secondary"}
-                  </span>
+                  <span>Image {index + 1}</span>
                   <span>{image.width ?? "?"}x{image.height ?? "?"}</span>
                   <span>{formatFileSize(image.file_size)}</span>
                 </div>
-
-                <div className="form-grid">
-                  <label className="field">
-                    <span>English alt text</span>
-                    <input
-                      name="alt_text_en"
-                      defaultValue={image.alt_text_en ?? ""}
-                      disabled={!canEdit}
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Arabic alt text</span>
-                    <input
-                      name="alt_text_ar"
-                      defaultValue={image.alt_text_ar ?? ""}
-                      disabled={!canEdit}
-                      dir="rtl"
-                    />
-                  </label>
-                </div>
-
-                <label className="field">
-                  <span>Sort order</span>
-                  <input
-                    name="sort_order"
-                    defaultValue={image.sort_order}
-                    disabled={!canEdit}
-                    required
-                  />
-                </label>
+                <input name="alt_text_en" type="hidden" value={image.alt_text_en ?? ""} />
+                <input name="alt_text_ar" type="hidden" value={image.alt_text_ar ?? ""} />
 
                 {canEdit ? (
-                  <div className="button-row">
-                    <button className="primary-button" type="submit">
-                      Save
-                    </button>
+                  <div className="image-action-row">
+                    {previousImage ? (
+                      <button
+                        className="secondary-button"
+                        name="sort_order"
+                        type="submit"
+                        value={previousImage.sort_order - 1}
+                      >
+                        Move left
+                      </button>
+                    ) : null}
+                    {nextImage ? (
+                      <button
+                        className="secondary-button"
+                        name="sort_order"
+                        type="submit"
+                        value={nextImage.sort_order + 1}
+                      >
+                        Move right
+                      </button>
+                    ) : null}
                     {!image.is_primary ? (
                       <button
                         className="secondary-button"
@@ -170,7 +128,8 @@ export function VendorSubmissionImages({
                 ) : null}
               </form>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

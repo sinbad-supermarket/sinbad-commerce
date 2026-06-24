@@ -460,7 +460,10 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
         storage_path: storagePath,
         alt_text_en: optionalImageText(formData.get("alt_text_en")),
         alt_text_ar: optionalImageText(formData.get("alt_text_ar")),
-        sort_order: parseImageSortOrder(formData.get("sort_order")),
+        sort_order:
+          formData.get("sort_order") === null
+            ? submission.snapshot.images.length
+            : parseImageSortOrder(formData.get("sort_order")),
         is_primary: submission.snapshot.images.length === 0,
         file_size: file.size,
         mime_type: file.type,

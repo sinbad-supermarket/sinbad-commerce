@@ -10,7 +10,6 @@ type VendorSubmissionFormProps = {
   error?: string;
   readOnly?: boolean;
   snapshot?: ProductSubmissionSnapshot;
-  submitLabel: string;
 };
 
 function fieldValue(value: string | number | null | undefined) {
@@ -57,13 +56,24 @@ const brandSuggestions = [
   "Generic",
 ];
 
+const descriptionTools = [
+  { label: "B", value: "**Bold text**" },
+  { label: "I", value: "*Italic text*" },
+  { label: "Heading", value: "## Heading" },
+  { label: "Bullets", value: "- List item" },
+  { label: "Numbered", value: "1. List item" },
+  { label: "Left", value: "[align:left]" },
+  { label: "Center", value: "[align:center]" },
+  { label: "Right", value: "[align:right]" },
+  { label: "Image", value: "![Image description](https://example.com/image.jpg)" },
+];
+
 export function VendorSubmissionForm({
   action,
   categories,
   error,
   readOnly = false,
   snapshot,
-  submitLabel,
 }: VendorSubmissionFormProps) {
   const initialSelection = useMemo(
     () => selectedCategoryPair(categories, snapshot),
@@ -79,10 +89,13 @@ export function VendorSubmissionForm({
   const [subcategoryInput, setSubcategoryInput] = useState(
     initialSubcategory ? categoryLabel(initialSubcategory) : "",
   );
-  const [specRows, setSpecRows] = useState(() => {
-    const specs = snapshot?.product.specifications ?? [];
-    return specs;
-  });
+  const [specRows, setSpecRows] = useState(() => snapshot?.product.specifications ?? []);
+  const [showSuggestedCategory, setShowSuggestedCategory] = useState(
+    Boolean(snapshot?.product.suggested_category),
+  );
+  const [showBrandRequest, setShowBrandRequest] = useState(
+    Boolean(snapshot?.product.brand_request),
+  );
   const parentCategories = categories.filter((category) => !category.parent_id);
   const selectedCategory = parentCategories.find(
     (category) => categoryLabel(category) === categoryInput,
@@ -94,13 +107,31 @@ export function VendorSubmissionForm({
     (category) => categoryLabel(category) === subcategoryInput,
   );
 
+  function insertText(targetId: string, value: string) {
+    const textarea = document.getElementById(targetId) as HTMLTextAreaElement | null;
+
+    if (!textarea || readOnly) {
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const prefix = textarea.value.slice(0, start);
+    const suffix = textarea.value.slice(end);
+    const spacer = prefix && !prefix.endsWith("\n") ? "\n" : "";
+    textarea.value = `${prefix}${spacer}${value}${suffix}`;
+    textarea.focus();
+    textarea.selectionStart = start + spacer.length;
+    textarea.selectionEnd = start + spacer.length + value.length;
+  }
+
   return (
-    <form className="admin-form wide-form" action={action}>
+    <form className="seller-product-form" action={action} id="vendor-product-form">
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>
         <div className="form-grid">
           <label className="field">
-            <span>English name</span>
+            <span>Product Name (English)</span>
             <input
               name="name_en"
               defaultValue={snapshot?.product.name_en}
@@ -109,7 +140,7 @@ export function VendorSubmissionForm({
             />
           </label>
           <label className="field">
-            <span>Arabic name</span>
+            <span>Product Name (Arabic)</span>
             <input
               name="name_ar"
               defaultValue={snapshot?.product.name_ar}
@@ -119,18 +150,9 @@ export function VendorSubmissionForm({
             />
           </label>
         </div>
-        <label className="field">
-          <span>Slug</span>
-          <input
-            name="slug"
-            defaultValue={snapshot?.product.slug}
-            disabled={readOnly}
-            placeholder="Generated from English name if blank"
-          />
-        </label>
         <div className="form-grid">
           <label className="field">
-            <span>English short description</span>
+            <span>Short Description (English)</span>
             <textarea
               name="short_description_en"
               defaultValue={snapshot?.product.short_description_en ?? ""}
@@ -139,7 +161,7 @@ export function VendorSubmissionForm({
             />
           </label>
           <label className="field">
-            <span>Arabic short description</span>
+            <span>Short Description (Arabic)</span>
             <textarea
               name="short_description_ar"
               defaultValue={snapshot?.product.short_description_ar ?? ""}
@@ -149,7 +171,7 @@ export function VendorSubmissionForm({
             />
           </label>
         </div>
-        <p className="field-help">Required before review. Use 20 to 180 characters.</p>
+        <p className="field-help">Use 20 to 180 characters for each short description.</p>
         <div className="form-grid">
           <label className="field">
             <span>Category</span>
@@ -160,7 +182,7 @@ export function VendorSubmissionForm({
                 setCategoryInput(event.target.value);
                 setSubcategoryInput("");
               }}
-              placeholder="Type to search categories"
+              placeholder="Search and select a category"
               value={categoryInput}
             />
           </label>
@@ -170,9 +192,7 @@ export function VendorSubmissionForm({
               disabled={readOnly || !selectedCategory}
               list="vendor-subcategory-options"
               onChange={(event) => setSubcategoryInput(event.target.value)}
-              placeholder={
-                selectedCategory ? "Type to search subcategories" : "Choose a category first"
-              }
+              placeholder={selectedCategory ? "Search and select a subcategory" : "Choose category first"}
               value={subcategoryInput}
             />
           </label>
@@ -194,15 +214,26 @@ export function VendorSubmissionForm({
           type="hidden"
           value={selectedSubcategory?.id ?? selectedCategory?.id ?? ""}
         />
-        <label className="field">
-          <span>Suggested category</span>
-          <input
-            name="suggested_category"
-            defaultValue={snapshot?.product.suggested_category ?? ""}
+        {showSuggestedCategory ? (
+          <label className="field">
+            <span>Suggested Category</span>
+            <input
+              name="suggested_category"
+              defaultValue={snapshot?.product.suggested_category ?? ""}
+              disabled={readOnly}
+              placeholder="Tell us the category you expected"
+            />
+          </label>
+        ) : (
+          <button
+            className="link-button"
             disabled={readOnly}
-            placeholder="Optional if the best category is missing"
-          />
-        </label>
+            onClick={() => setShowSuggestedCategory(true)}
+            type="button"
+          >
+            Can&apos;t find the right category?
+          </button>
+        )}
         <div className="form-grid">
           <label className="field">
             <span>Brand</span>
@@ -211,7 +242,7 @@ export function VendorSubmissionForm({
               defaultValue={snapshot?.product.brand_name ?? ""}
               disabled={readOnly}
               list="vendor-brand-options"
-              placeholder="Type to search brands"
+              placeholder="Search or enter brand"
             />
           </label>
           <label className="field">
@@ -232,17 +263,28 @@ export function VendorSubmissionForm({
             <option key={brand} value={brand} />
           ))}
         </datalist>
-        <label className="field">
-          <span>Brand not found? Request New Brand</span>
-          <input
-            name="brand_request"
-            defaultValue={snapshot?.product.brand_request ?? ""}
+        {showBrandRequest ? (
+          <label className="field">
+            <span>Request New Brand</span>
+            <input
+              name="brand_request"
+              defaultValue={snapshot?.product.brand_request ?? ""}
+              disabled={readOnly}
+              placeholder="Enter the brand name to request"
+            />
+          </label>
+        ) : (
+          <button
+            className="link-button"
             disabled={readOnly}
-            placeholder="Optional brand request"
-          />
-        </label>
+            onClick={() => setShowBrandRequest(true)}
+            type="button"
+          >
+            Can&apos;t find your brand? Request a new brand
+          </button>
+        )}
         <label className="field">
-          <span>Product Video URL</span>
+          <span>YouTube, TikTok, or Instagram URL (Optional)</span>
           <input
             name="video_url"
             defaultValue={snapshot?.product.video_url ?? ""}
@@ -281,7 +323,7 @@ export function VendorSubmissionForm({
         </div>
         <div className="form-grid">
           <label className="field">
-            <span>Quantity</span>
+            <span>Available Stock</span>
             <input
               name="stock_quantity"
               type="number"
@@ -306,7 +348,7 @@ export function VendorSubmissionForm({
         </div>
         <div className="form-grid">
           <label className="field">
-            <span>SKU</span>
+            <span>SKU (Optional)</span>
             <input
               name="sku"
               defaultValue={snapshot?.product.sku ?? ""}
@@ -314,7 +356,7 @@ export function VendorSubmissionForm({
             />
           </label>
           <label className="field">
-            <span>Barcode</span>
+            <span>Barcode (Optional)</span>
             <input
               name="barcode"
               defaultValue={snapshot?.product.barcode ?? ""}
@@ -325,18 +367,18 @@ export function VendorSubmissionForm({
       </fieldset>
 
       <fieldset className="fieldset">
-        <legend>Specifications & Warranty</legend>
+        <legend>Product Specifications</legend>
         {specRows.length === 0 ? (
           <p className="empty-state">
-            No specifications added yet. Examples: Weight = 500g, Country =
-            Philippines, Color = Black.
+            Add specifications only when needed. Examples: Weight, Country of Origin,
+            Material, Color, Size.
           </p>
         ) : (
           <div className="spec-list">
             {specRows.map((spec, index) => (
               <div className="spec-row" key={`${index}-${spec.key}`}>
                 <label className="field">
-                  <span>Key</span>
+                  <span>Specification</span>
                   <input
                     name="spec_key"
                     defaultValue={spec.key}
@@ -381,7 +423,7 @@ export function VendorSubmissionForm({
           </button>
         ) : null}
         <label className="field">
-          <span>Warranty</span>
+          <span>Warranty Information (Optional)</span>
           <input
             name="warranty"
             defaultValue={snapshot?.product.warranty ?? ""}
@@ -393,31 +435,57 @@ export function VendorSubmissionForm({
 
       <fieldset className="fieldset">
         <legend>Full Description</legend>
-        <div className="form-grid">
-          <label className="field">
-            <span>English full description</span>
-            <textarea
-              name="description_en"
-              defaultValue={snapshot?.product.description_en ?? ""}
-              disabled={readOnly}
-            />
-          </label>
-          <label className="field">
-            <span>Arabic full description</span>
-            <textarea
-              name="description_ar"
-              defaultValue={snapshot?.product.description_ar ?? ""}
-              disabled={readOnly}
-              dir="rtl"
-            />
-          </label>
-        </div>
+        <label className="field">
+          <span>Product Description (English)</span>
+          <div className="editor-toolbar" aria-label="English description formatting tools">
+            {descriptionTools.map((tool) => (
+              <button
+                key={`en-${tool.label}`}
+                className="secondary-button compact-button"
+                onClick={() => insertText("description_en", tool.value)}
+                type="button"
+              >
+                {tool.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="large-textarea"
+            id="description_en"
+            name="description_en"
+            defaultValue={snapshot?.product.description_en ?? ""}
+            disabled={readOnly}
+          />
+        </label>
+        <label className="field">
+          <span>Product Description (Arabic)</span>
+          <div className="editor-toolbar" aria-label="Arabic description formatting tools">
+            {descriptionTools.map((tool) => (
+              <button
+                key={`ar-${tool.label}`}
+                className="secondary-button compact-button"
+                onClick={() => insertText("description_ar", tool.value)}
+                type="button"
+              >
+                {tool.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="large-textarea"
+            id="description_ar"
+            name="description_ar"
+            defaultValue={snapshot?.product.description_ar ?? ""}
+            disabled={readOnly}
+            dir="rtl"
+          />
+        </label>
       </fieldset>
 
       <fieldset className="fieldset">
         <legend>Actions</legend>
         <label className="field">
-          <span>Intended public status after approval</span>
+          <span>Product status after approval</span>
           <select
             name="intended_status"
             defaultValue={snapshot?.product.intended_status ?? "active"}
@@ -430,12 +498,6 @@ export function VendorSubmissionForm({
         </label>
 
         {error ? <p className="form-error">{error}</p> : null}
-
-        {!readOnly ? (
-          <button className="secondary-button" type="submit">
-            {submitLabel}
-          </button>
-        ) : null}
       </fieldset>
     </form>
   );

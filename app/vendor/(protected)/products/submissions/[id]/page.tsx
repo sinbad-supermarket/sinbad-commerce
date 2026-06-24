@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { VendorShell } from "@/components/vendor/vendor-shell";
 import { VendorSubmissionImages } from "@/components/vendor/vendor-submission-images";
 import { VendorSubmissionForm } from "@/components/vendor/vendor-submission-form";
-import { VendorSubmissionStatus } from "@/components/vendor/vendor-submission-status";
 import {
   deleteSubmissionImage,
   makeSubmissionImagePrimary,
@@ -83,12 +82,10 @@ export default async function VendorSubmissionPage({
     <VendorShell currentVendor={currentVendor} memberships={memberships}>
       <div className="page-header">
         <div>
-          <h2 className="page-title">
-            {submission.snapshot.product.name_en || "New product draft"}
-          </h2>
+          <h2 className="page-title">Add Product</h2>
           <p className="page-copy">
-            {submission.change_type} submission ·{" "}
-            <VendorSubmissionStatus status={submission.status} />
+            Add images, product information, pricing, and details before sending
+            this product to Sinbad for review.
           </p>
         </div>
         <Link className="secondary-link" href="/vendor/products">
@@ -116,15 +113,23 @@ export default async function VendorSubmissionPage({
           error={error}
           readOnly={!canEdit}
           snapshot={submission.snapshot}
-          submitLabel="Save draft"
         />
 
         {canEdit ? (
-          <form className="submission-actions" action={submitSubmission}>
-            <button className="primary-button" type="submit">
-              Submit For Review
+          <div className="submission-actions seller-submit-panel">
+            <button
+              className="secondary-button"
+              form="vendor-product-form"
+              type="submit"
+            >
+              Save Draft
             </button>
-          </form>
+            <form action={submitSubmission}>
+              <button className="primary-button" type="submit">
+                Submit For Review
+              </button>
+            </form>
+          </div>
         ) : (
           <p className="empty-state">
             This submission is read-only. Submitted, approved, rejected, cancelled,
