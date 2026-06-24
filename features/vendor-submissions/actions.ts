@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import {
   extensionForMimeType,
+  getProductImageDimensions,
   optionalImageText,
   parseImageSortOrder,
   productImageBucket,
@@ -19,6 +20,7 @@ import {
   type StagedSubmissionImage,
 } from "./types";
 import {
+  assertSnapshotReadyForReview,
   assertSubmissionIsEditable,
   parseSubmissionSnapshotFormData,
 } from "./validators";
@@ -134,6 +136,13 @@ function snapshotFromCanonicalProduct(
     description_en: string | null;
     description_ar: string | null;
     price: string | number | null;
+    sale_price?: string | number | null;
+    brand_name?: string | null;
+    video_url?: string | null;
+    stock_quantity?: number | null;
+    availability?: string | null;
+    specifications?: Array<{ key: string; value: string }> | null;
+    warranty?: string | null;
     status: string;
   },
   assignments: Array<{ category_id: string; is_primary: boolean }>,
@@ -152,6 +161,20 @@ function snapshotFromCanonicalProduct(
       description_ar: product.description_ar,
       price:
         product.price === null || product.price === undefined ? null : String(product.price),
+      sale_price:
+        product.sale_price === null || product.sale_price === undefined
+          ? null
+          : String(product.sale_price),
+      brand_name: product.brand_name ?? null,
+      video_url: product.video_url ?? null,
+      stock_quantity: product.stock_quantity ?? null,
+      availability:
+        product.availability === "out_of_stock" || product.availability === "preorder"
+          ? product.availability
+          : "in_stock",
+      specifications: product.specifications ?? [],
+      warranty: product.warranty ?? null,
+      suggested_category: null,
       intended_status: product.status as ProductStatus,
     },
     categories: assignments.map((assignment) => ({
@@ -300,6 +323,7 @@ export async function updateProductSubmissionDraft(
     const snapshot = parseSubmissionSnapshotFormData(formData, {
       requireCategories: false,
     });
+    snapshot.images = submission.snapshot.images;
     await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
     await assertSnapshotIsAvailable(snapshot, submission.product_id);
 
@@ -333,6 +357,11 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
     const { currentVendor, submission } =
       await getOwnEditableSubmissionForSelectedVendor(submissionId);
     const file = validateProductImageFile(formData.get("image"));
+    if (submission.snapshot.images.length >= 8) {
+      throw new Error("A product can have at most 8 images.");
+    }
+
+    const dimensions = await getProductImageDimensions(file);
     const imageId = randomUUID();
     const extension = extensionForMimeType(file.type);
     storagePath = `vendor-submissions/${currentVendor.vendor.id}/${submission.id}/${imageId}.${extension}`;
@@ -359,8 +388,8 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
         is_primary: submission.snapshot.images.length === 0,
         file_size: file.size,
         mime_type: file.type,
-        width: null,
-        height: null,
+        width: dimensions.width,
+        height: dimensions.height,
       },
     ]);
 
@@ -507,10 +536,7 @@ export async function submitProductSubmissionForReview(submissionId: string) {
 
     await assertOwnEditableSubmission(submission, userId);
 
-    if (submission.snapshot.categories.length === 0) {
-      throw new Error("At least one category is required before submitting for review.");
-    }
-
+    assertSnapshotReadyForReview(submission.snapshot);
     await assertCategoriesExist(categoryIdsFromSnapshot(submission.snapshot));
     await assertSnapshotIsAvailable(submission.snapshot, submission.product_id);
 

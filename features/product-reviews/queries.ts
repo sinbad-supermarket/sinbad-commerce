@@ -59,7 +59,7 @@ async function getCanonicalProduct(productId: string | null) {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,status,review_status,updated_at",
+      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,sale_price,brand_name,video_url,stock_quantity,availability,specifications,warranty,status,review_status,updated_at",
     )
     .eq("id", productId)
     .maybeSingle();

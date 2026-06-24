@@ -13,17 +13,25 @@ function formatFileSize(fileSize: number | null) {
 }
 
 export function ProductReviewImages({ images }: ProductReviewImagesProps) {
+  const orderedImages = [...images].sort((a, b) => {
+    if (a.is_primary !== b.is_primary) {
+      return a.is_primary ? -1 : 1;
+    }
+
+    return a.sort_order - b.sort_order;
+  });
+
   return (
     <section className="section-stack">
       <div>
         <h2 className="section-title">Staged images</h2>
       </div>
 
-      {images.length === 0 ? (
+      {orderedImages.length === 0 ? (
         <p className="empty-state">No staged images are attached to this submission.</p>
       ) : (
         <div className="image-list">
-          {images.map((image) => (
+          {orderedImages.map((image) => (
             <article className="image-item" key={image.id}>
               <div className="image-preview">
                 {image.signedUrl ? (
@@ -50,6 +58,7 @@ export function ProductReviewImages({ images }: ProductReviewImagesProps) {
                   </span>
                   <span>{image.mime_type}</span>
                   <span>{formatFileSize(image.file_size)}</span>
+                  <span>{image.width ?? "?"}x{image.height ?? "?"}</span>
                   <span>Sort: {image.sort_order}</span>
                 </div>
                 <p>English alt: {image.alt_text_en ?? "None"}</p>

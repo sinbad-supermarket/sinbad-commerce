@@ -258,3 +258,76 @@ Future product form requirement:
   disabled/hidden until a parent category is selected.
 - A suggested category field can be added later when no controlled match exists,
   but it must not create categories automatically.
+
+## Milestone 6: Vendor Product Submission Form v2
+
+Implemented a marketplace-quality vendor product submission form while keeping
+checkout, orders, payments, shipping, inventory, customer accounts, mobile apps,
+and vendor application flows unchanged.
+
+The vendor product submission flow now collects:
+
+- product images first, using the existing private staged-image system
+- bilingual short descriptions
+- bilingual product names
+- controlled category and subcategory selections from active categories only
+- optional suggested category text stored only in the submission snapshot
+- brand name
+- optional product video URL
+- regular price and optional sale price
+- stock quantity
+- SKU and barcode
+- availability: `in_stock`, `out_of_stock`, or `preorder`
+- optional key/value product specifications
+- optional warranty text
+- bilingual full descriptions
+- intended canonical product status after approval
+
+Image rules:
+
+- minimum 2 images before review submission
+- maximum 8 images
+- JPEG, PNG, and WebP only
+- existing 5 MB per-image limit remains
+- dimensions must be between 330x330 and 5000x5000 pixels
+- primary image is shown first in vendor/admin review views and is applied as the
+  canonical primary image on approval
+- replacing an image is handled through delete + upload replacement to preserve
+  the existing staged storage/RLS model
+
+Snapshot and approval behavior:
+
+- Vendor edits still write only to `product_review_submissions.snapshot`.
+- Vendors cannot mutate canonical `products`, `product_categories`, or
+  `product_images` directly.
+- Saving product fields preserves existing staged images in the snapshot.
+- Submitting for review revalidates required fields, category assignment, image
+  count, image dimensions, sale price, stock quantity, and availability.
+- Admin approval revalidates the snapshot atomically and copies supported fields
+  into canonical `products`.
+
+Canonical `products` now supports:
+
+- `sale_price`
+- `brand_name`
+- `video_url`
+- `stock_quantity`
+- `availability`
+- `specifications`
+- `warranty`
+
+The public catalog remains governed by the existing public visibility rules:
+
+- `product.status = active`
+- `product.review_status = approved`
+- vendor is active
+- vendor is public
+
+Deferred:
+
+- global brand catalog and brand logos
+- advanced category suggestions workflow
+- rich text descriptions
+- attribute templates
+- inventory reservation
+- public storefront display for every new v2 field

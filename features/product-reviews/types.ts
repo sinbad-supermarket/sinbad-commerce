@@ -27,6 +27,13 @@ export type ReviewCanonicalProduct = {
   description_en: string | null;
   description_ar: string | null;
   price: string | number | null;
+  sale_price: string | number | null;
+  brand_name: string | null;
+  video_url: string | null;
+  stock_quantity: number | null;
+  availability: string | null;
+  specifications: Array<{ key: string; value: string }> | null;
+  warranty: string | null;
   status: ProductStatus;
   review_status: string;
   updated_at: string;

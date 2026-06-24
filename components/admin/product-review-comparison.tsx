@@ -81,6 +81,36 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
       submitted: priceValue(submitted.price),
     },
     {
+      label: "Sale price",
+      canonical: priceValue(canonical?.sale_price),
+      submitted: priceValue(submitted.sale_price),
+    },
+    {
+      label: "Brand",
+      canonical: displayValue(canonical?.brand_name),
+      submitted: displayValue(submitted.brand_name),
+    },
+    {
+      label: "Video URL",
+      canonical: displayValue(canonical?.video_url),
+      submitted: displayValue(submitted.video_url),
+    },
+    {
+      label: "Stock quantity",
+      canonical: displayValue(canonical?.stock_quantity),
+      submitted: displayValue(submitted.stock_quantity),
+    },
+    {
+      label: "Availability",
+      canonical: displayValue(canonical?.availability),
+      submitted: displayValue(submitted.availability),
+    },
+    {
+      label: "Warranty",
+      canonical: displayValue(canonical?.warranty),
+      submitted: displayValue(submitted.warranty),
+    },
+    {
       label: "Status",
       canonical: displayValue(canonical?.status),
       submitted: displayValue(submitted.intended_status),
@@ -111,6 +141,32 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div>
+        <h2 className="section-title">Specifications</h2>
+        {submitted.specifications.length === 0 ? (
+          <p className="empty-state">No specifications are included in this snapshot.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submitted.specifications.map((specification) => (
+                  <tr key={specification.key}>
+                    <td>{specification.key}</td>
+                    <td>{specification.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div>

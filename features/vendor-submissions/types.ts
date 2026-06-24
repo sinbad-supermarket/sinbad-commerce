@@ -37,6 +37,19 @@ export type StagedSubmissionImageListItem = StagedSubmissionImage & {
   signedUrl: string | null;
 };
 
+export const productAvailabilityOptions = [
+  "in_stock",
+  "out_of_stock",
+  "preorder",
+] as const;
+
+export type ProductAvailability = (typeof productAvailabilityOptions)[number];
+
+export type ProductSpecification = {
+  key: string;
+  value: string;
+};
+
 export type ProductSubmissionSnapshot = {
   version: 1;
   product: {
@@ -50,6 +63,14 @@ export type ProductSubmissionSnapshot = {
     description_en: string | null;
     description_ar: string | null;
     price: string | null;
+    sale_price: string | null;
+    brand_name: string | null;
+    video_url: string | null;
+    stock_quantity: number | null;
+    availability: ProductAvailability;
+    specifications: ProductSpecification[];
+    warranty: string | null;
+    suggested_category: string | null;
     intended_status: ProductStatus;
   };
   categories: Array<{

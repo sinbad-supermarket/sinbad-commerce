@@ -99,15 +99,6 @@ export default async function VendorSubmissionPage({
       ) : null}
 
       <div className="section-stack">
-        <VendorSubmissionForm
-          action={updateSubmission}
-          categories={categories}
-          error={error}
-          readOnly={!canEdit}
-          snapshot={submission.snapshot}
-          submitLabel="Save draft"
-        />
-
         <VendorSubmissionImages
           canEdit={canEdit}
           images={signedImages}
@@ -115,6 +106,15 @@ export default async function VendorSubmissionPage({
           onMakePrimary={makePrimaryImage}
           onUpdate={updateImage}
           uploadAction={uploadImage}
+        />
+
+        <VendorSubmissionForm
+          action={updateSubmission}
+          categories={categories}
+          error={error}
+          readOnly={!canEdit}
+          snapshot={submission.snapshot}
+          submitLabel="Save draft"
         />
 
         {canEdit ? (

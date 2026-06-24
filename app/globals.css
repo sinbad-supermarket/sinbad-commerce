@@ -442,6 +442,68 @@ a {
   gap: 18px;
 }
 
+.image-count-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.image-upload-preview {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  height: 120px;
+  padding: 8px;
+  width: 120px;
+}
+
+.image-upload-preview img {
+  aspect-ratio: 1;
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.image-card-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.image-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.image-card-preview {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-card-preview a,
+.image-card-preview img {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.image-card-preview img {
+  object-fit: contain;
+}
+
 .image-item {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -492,6 +554,17 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.spec-list {
+  display: grid;
+  gap: 12px;
+}
+
+.spec-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .public-section {
@@ -969,6 +1042,7 @@ a {
 @media (max-width: 720px) {
   .page-header,
   .form-grid,
+  .spec-row,
   .image-item,
   .product-detail,
   .search-form,

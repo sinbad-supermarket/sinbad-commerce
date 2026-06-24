@@ -39,6 +39,16 @@ export default async function NewVendorProductPage({
         </Link>
       </div>
 
+      <section className="section-stack">
+        <div>
+          <h2 className="section-title">Product Images</h2>
+          <p className="empty-state">
+            Save the draft first, then upload 2 to 8 staged product images before
+            submitting for review.
+          </p>
+        </div>
+      </section>
+
       <VendorSubmissionForm
         action={createProductSubmissionDraft}
         categories={categories}

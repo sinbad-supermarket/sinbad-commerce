@@ -13,6 +13,13 @@ type CanonicalProductRow = VendorCanonicalProductListItem & {
   description_en: string | null;
   description_ar: string | null;
   price: string | number | null;
+  sale_price: string | number | null;
+  brand_name: string | null;
+  video_url: string | null;
+  stock_quantity: number | null;
+  availability: string | null;
+  specifications: Array<{ key: string; value: string }> | null;
+  warranty: string | null;
   vendor_id: string;
 };
 
@@ -39,7 +46,7 @@ export async function getVendorCanonicalProductById(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,status,review_status,updated_at,vendor_id",
+      "id,slug,sku,barcode,name_en,name_ar,short_description_en,short_description_ar,description_en,description_ar,price,sale_price,brand_name,video_url,stock_quantity,availability,specifications,warranty,status,review_status,updated_at,vendor_id",
     )
     .eq("id", productId)
     .eq("vendor_id", vendorId)
