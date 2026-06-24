@@ -69,7 +69,8 @@ const checks = [
           'can_manage_vendor_submission_image_object',
           'replace_product_category_assignments',
           'search_active_products',
-          'create_cod_order_from_cart'
+          'create_cod_order_from_cart',
+          'submit_vendor_product_review_submission'
         )
       order by p.proname;
     `,

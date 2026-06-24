@@ -28,7 +28,9 @@ export async function listVendorCanonicalProducts(vendorId: string) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name_en,name_ar,status,review_status,updated_at")
+    .select(
+      "id,slug,name_en,name_ar,sku,barcode,price,sale_price,brand_name,stock_quantity,availability,status,review_status,updated_at",
+    )
     .eq("vendor_id", vendorId)
     .order("updated_at", { ascending: false });
 

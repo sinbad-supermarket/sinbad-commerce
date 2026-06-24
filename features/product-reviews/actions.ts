@@ -50,6 +50,30 @@ async function updateReviewStatus(
   if (!data) {
     throw new Error("Only submitted product reviews can be updated.");
   }
+
+  const { data: submission, error: submissionError } = await supabase
+    .from("product_review_submissions")
+    .select("change_type,product_id,vendor_id")
+    .eq("id", reviewId)
+    .maybeSingle();
+
+  if (submissionError) {
+    throw new Error(submissionError.message);
+  }
+
+  if (submission?.change_type === "update" && submission.product_id) {
+    const { error: productError } = await supabase
+      .from("products")
+      .update({
+        review_status: status,
+      })
+      .eq("id", submission.product_id)
+      .eq("vendor_id", submission.vendor_id);
+
+    if (productError) {
+      throw new Error(productError.message);
+    }
+  }
 }
 
 export async function approveProductReview(reviewId: string) {

@@ -345,7 +345,68 @@ Deferred:
 
 - global brand catalog and brand logos
 - advanced category suggestions workflow
-- rich text descriptions
 - attribute templates
 - inventory reservation
 - public storefront display for every new v2 field
+
+## Phase B: Vendor Products Dashboard and Revision Workflow
+
+Implemented a professional vendor product management dashboard at
+`/vendor/products` while keeping checkout, orders, payments, shipping,
+inventory automation, customer accounts, vendor applications, taxonomy,
+description editor, and image upload architecture unchanged.
+
+Vendor dashboard now includes:
+
+- summary cards for All Products, Approved, Pending Review, Draft, Rejected,
+  Hidden, and Out Of Stock
+- Add Product primary action
+- search by product name, SKU, and barcode
+- filters for category, brand, status, stock, and updated date
+- sorting by newest, oldest, and recently updated
+- unified product table with image, product name, category, brand, price, stock,
+  status, updated date, and merchant actions
+
+Merchant-facing statuses:
+
+- Approved
+- Pending Review
+- Draft
+- Rejected
+- Changes Requested
+- Hidden
+- Out Of Stock
+
+Revision workflow business rule:
+
+- When a vendor submits changes to an already approved canonical product, the
+  canonical product is immediately moved to `review_status = pending_review`.
+- Public catalog, search, category pages, product detail pages, cart eligibility,
+  and vendor store pages continue to require `status = active`,
+  `review_status = approved`, and an active/public vendor.
+- This means the product is hidden from customers while the update is under
+  review.
+- If admin approves the submission, the approval RPC applies the submitted
+  snapshot to the canonical product and restores `review_status = approved`.
+- If admin rejects or requests changes, the canonical product remains hidden
+  through `review_status = rejected` or `changes_requested`.
+- Vendor can see the admin reason and edit/resubmit rejected or
+  changes-requested submissions.
+
+Implementation notes:
+
+- Vendors still cannot directly update canonical `products`.
+- The submit transition uses a narrow server-side database lifecycle instead of
+  broad product update policies.
+- The vendor-facing Delete action for drafts cancels the draft submission rather
+  than deleting database rows.
+- Duplicate creates a new draft submission from the existing product snapshot
+  with SKU/barcode cleared so marketplace uniqueness rules remain safe.
+
+Still deferred:
+
+- customer-facing product status messaging
+- product version history
+- audit logs for every product lifecycle action
+- global brand catalog
+- category suggestion review queue

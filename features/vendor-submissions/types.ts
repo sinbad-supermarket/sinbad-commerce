@@ -9,11 +9,12 @@ export const submissionStatuses = [
   "cancelled",
 ] as const;
 
-export const editableSubmissionStatuses = ["draft", "changes_requested"] as const;
+export const editableSubmissionStatuses = ["draft", "changes_requested", "rejected"] as const;
 export const activeUpdateSubmissionStatuses = [
   "draft",
   "submitted",
   "changes_requested",
+  "rejected",
 ] as const;
 
 export type SubmissionStatus = (typeof submissionStatuses)[number];
@@ -107,6 +108,13 @@ export type VendorCanonicalProductListItem = {
   slug: string;
   name_en: string;
   name_ar: string;
+  sku: string | null;
+  barcode: string | null;
+  price: string | number | null;
+  sale_price: string | number | null;
+  brand_name: string | null;
+  stock_quantity: number | null;
+  availability: string | null;
   status: string;
   review_status: string;
   updated_at: string;

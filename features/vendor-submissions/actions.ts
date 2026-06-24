@@ -635,14 +635,12 @@ export async function submitProductSubmissionForReview(submissionId: string) {
     );
 
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase
-      .from("product_review_submissions")
-      .update({
-        status: "submitted",
-        submitted_at: new Date().toISOString(),
-      })
-      .eq("id", submissionId)
-      .eq("vendor_id", currentVendor.vendor.id);
+    const { error } = await supabase.rpc(
+      "submit_vendor_product_review_submission",
+      {
+        p_submission_id: submissionId,
+      },
+    );
 
     if (error) {
       throw new Error(error.message);
@@ -651,6 +649,45 @@ export async function submitProductSubmissionForReview(submissionId: string) {
     submissionErrorRedirect(
       `/vendor/products/submissions/${submissionId}`,
       error instanceof Error ? error.message : "Unable to submit for review.",
+    );
+  }
+
+  redirect("/vendor/products");
+}
+
+export async function cancelDraftSubmission(submissionId: string) {
+  const { currentVendor } = await requireSelectedVendor();
+
+  try {
+    assertVendorCanWrite(currentVendor.vendor.status);
+    const userId = await getCurrentUserId();
+    const submission = await getVendorSubmissionById(
+      submissionId,
+      currentVendor.vendor.id,
+    );
+
+    if (!submission) {
+      throw new Error("Submission was not found.");
+    }
+
+    if (submission.submitted_by !== userId || submission.status !== "draft") {
+      throw new Error("Only your draft products can be deleted.");
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("product_review_submissions")
+      .update({ status: "cancelled" })
+      .eq("id", submissionId)
+      .eq("vendor_id", currentVendor.vendor.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  } catch (error) {
+    submissionErrorRedirect(
+      "/vendor/products",
+      error instanceof Error ? error.message : "Unable to delete draft.",
     );
   }
 
@@ -718,6 +755,63 @@ export async function createUpdateSubmissionFromProduct(productId: string) {
     submissionErrorRedirect(
       "/vendor/products",
       error instanceof Error ? error.message : "Unable to create update submission.",
+    );
+  }
+
+  redirect(`/vendor/products/submissions/${submissionId}`);
+}
+
+export async function duplicateProductAsDraft(productId: string) {
+  const { currentVendor } = await requireSelectedVendor();
+  let submissionId: string;
+
+  try {
+    assertVendorCanWrite(currentVendor.vendor.status);
+    const userId = await getCurrentUserId();
+    const product = await getVendorCanonicalProductById(
+      productId,
+      currentVendor.vendor.id,
+    );
+
+    if (!product) {
+      throw new Error("Product was not found.");
+    }
+
+    const assignments = await listVendorProductCategoryAssignments(
+      productId,
+      currentVendor.vendor.id,
+    );
+    const snapshot = snapshotFromCanonicalProduct(product, assignments);
+    snapshot.product.slug = `${product.slug}-${randomUUID().slice(0, 8)}`;
+    snapshot.product.sku = null;
+    snapshot.product.barcode = null;
+    snapshot.product.name_en = `${product.name_en} Copy`;
+    snapshot.product.name_ar = `${product.name_ar} نسخة`;
+    snapshot.images = [];
+
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("product_review_submissions")
+      .insert({
+        vendor_id: currentVendor.vendor.id,
+        product_id: null,
+        submitted_by: userId,
+        change_type: "create",
+        status: "draft",
+        snapshot,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    submissionId = data.id;
+  } catch (error) {
+    submissionErrorRedirect(
+      "/vendor/products",
+      error instanceof Error ? error.message : "Unable to duplicate product.",
     );
   }
 
