@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { AddToCartForm } from "@/components/cart/add-to-cart-form";
 import { ProductImage } from "@/components/product/product-image";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { RichTextContent } from "@/components/ui/rich-text-content";
 import { getPublicProductBySlug } from "@/features/public-catalog/queries";
+import { richTextToPlainText } from "@/lib/utils/rich-text";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,7 @@ export async function generateMetadata({
 
   return {
     title: `${product.name_en} | Sinbad Commerce Lab`,
-    description: product.short_description_en ?? product.description_en ?? product.name_en,
+    description: product.short_description_en ?? richTextToPlainText(product.description_en) ?? product.name_en,
   };
 }
 
@@ -69,12 +71,8 @@ export default async function ProductDetailPage({ params }: ProductDetailParams)
               {product.short_description_ar}
             </p>
           ) : null}
-          {product.description_en ? <p>{product.description_en}</p> : null}
-          {product.description_ar ? (
-            <p className="arabic-text" dir="rtl">
-              {product.description_ar}
-            </p>
-          ) : null}
+          <RichTextContent content={product.description_en} />
+          <RichTextContent className="arabic-text" content={product.description_ar} dir="rtl" />
           {product.categories.length > 0 ? (
             <div className="chip-row">
               {product.categories.map((category) => (

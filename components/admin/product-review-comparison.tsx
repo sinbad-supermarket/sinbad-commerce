@@ -1,3 +1,4 @@
+import { RichTextContent } from "@/components/ui/rich-text-content";
 import type { ProductReviewDetail } from "@/features/product-reviews/types";
 
 type ProductReviewComparisonProps = {
@@ -7,6 +8,7 @@ type ProductReviewComparisonProps = {
 type ComparisonRow = {
   label: string;
   canonical: string;
+  isRichText?: boolean;
   submitted: string;
 };
 
@@ -69,11 +71,13 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
     {
       label: "English description",
       canonical: displayValue(canonical?.description_en),
+      isRichText: true,
       submitted: displayValue(submitted.description_en),
     },
     {
       label: "Arabic description",
       canonical: displayValue(canonical?.description_ar),
+      isRichText: true,
       submitted: displayValue(submitted.description_ar),
     },
     {
@@ -145,8 +149,28 @@ export function ProductReviewComparison({ review }: ProductReviewComparisonProps
               {rows.map((row) => (
                 <tr key={row.label}>
                   <td>{row.label}</td>
-                  <td>{row.canonical}</td>
-                  <td>{row.submitted}</td>
+                  <td>
+                    {row.isRichText ? (
+                      <RichTextContent
+                        className="admin-rich-text-preview"
+                        content={row.canonical === "None" ? null : row.canonical}
+                        dir={row.label.includes("Arabic") ? "rtl" : "ltr"}
+                      />
+                    ) : (
+                      row.canonical
+                    )}
+                  </td>
+                  <td>
+                    {row.isRichText ? (
+                      <RichTextContent
+                        className="admin-rich-text-preview"
+                        content={row.submitted === "None" ? null : row.submitted}
+                        dir={row.label.includes("Arabic") ? "rtl" : "ltr"}
+                      />
+                    ) : (
+                      row.submitted
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

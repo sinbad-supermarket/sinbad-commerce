@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ProductDescriptionEditor } from "@/components/vendor/product-description-editor";
 import type { CategoryRow } from "@/features/categories/types";
 import type { ProductSubmissionSnapshot } from "@/features/vendor-submissions/types";
 
@@ -56,18 +57,6 @@ const brandSuggestions = [
   "Generic",
 ];
 
-const descriptionTools = [
-  { label: "B", value: "**Bold text**" },
-  { label: "I", value: "*Italic text*" },
-  { label: "Heading", value: "## Heading" },
-  { label: "Bullets", value: "- List item" },
-  { label: "Numbered", value: "1. List item" },
-  { label: "Left", value: "[align:left]" },
-  { label: "Center", value: "[align:center]" },
-  { label: "Right", value: "[align:right]" },
-  { label: "Image", value: "![Image description](https://example.com/image.jpg)" },
-];
-
 export function VendorSubmissionForm({
   action,
   categories,
@@ -106,24 +95,6 @@ export function VendorSubmissionForm({
   const selectedSubcategory = subcategories.find(
     (category) => categoryLabel(category) === subcategoryInput,
   );
-
-  function insertText(targetId: string, value: string) {
-    const textarea = document.getElementById(targetId) as HTMLTextAreaElement | null;
-
-    if (!textarea || readOnly) {
-      return;
-    }
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const prefix = textarea.value.slice(0, start);
-    const suffix = textarea.value.slice(end);
-    const spacer = prefix && !prefix.endsWith("\n") ? "\n" : "";
-    textarea.value = `${prefix}${spacer}${value}${suffix}`;
-    textarea.focus();
-    textarea.selectionStart = start + spacer.length;
-    textarea.selectionEnd = start + spacer.length + value.length;
-  }
 
   return (
     <form className="seller-product-form" action={action} id="vendor-product-form">
@@ -435,51 +406,19 @@ export function VendorSubmissionForm({
 
       <fieldset className="fieldset">
         <legend>Full Description</legend>
-        <label className="field">
-          <span>Product Description (English)</span>
-          <div className="editor-toolbar" aria-label="English description formatting tools">
-            {descriptionTools.map((tool) => (
-              <button
-                key={`en-${tool.label}`}
-                className="secondary-button compact-button"
-                onClick={() => insertText("description_en", tool.value)}
-                type="button"
-              >
-                {tool.label}
-              </button>
-            ))}
-          </div>
-          <textarea
-            className="large-textarea"
-            id="description_en"
-            name="description_en"
-            defaultValue={snapshot?.product.description_en ?? ""}
-            disabled={readOnly}
-          />
-        </label>
-        <label className="field">
-          <span>Product Description (Arabic)</span>
-          <div className="editor-toolbar" aria-label="Arabic description formatting tools">
-            {descriptionTools.map((tool) => (
-              <button
-                key={`ar-${tool.label}`}
-                className="secondary-button compact-button"
-                onClick={() => insertText("description_ar", tool.value)}
-                type="button"
-              >
-                {tool.label}
-              </button>
-            ))}
-          </div>
-          <textarea
-            className="large-textarea"
-            id="description_ar"
-            name="description_ar"
-            defaultValue={snapshot?.product.description_ar ?? ""}
-            disabled={readOnly}
-            dir="rtl"
-          />
-        </label>
+        <ProductDescriptionEditor
+          initialValue={snapshot?.product.description_en}
+          label="Product Description (English)"
+          name="description_en"
+          readOnly={readOnly}
+        />
+        <ProductDescriptionEditor
+          dir="rtl"
+          initialValue={snapshot?.product.description_ar}
+          label="Product Description (Arabic)"
+          name="description_ar"
+          readOnly={readOnly}
+        />
       </fieldset>
 
       <fieldset className="fieldset">

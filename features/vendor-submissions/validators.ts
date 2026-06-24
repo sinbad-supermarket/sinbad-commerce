@@ -1,4 +1,5 @@
 import { createSlug, normalizeSlug } from "@/lib/utils/slug";
+import { sanitizeRichText } from "@/lib/utils/rich-text";
 import { productStatuses, type ProductStatus } from "@/features/products/types";
 import {
   editableSubmissionStatuses,
@@ -191,8 +192,8 @@ export function parseSubmissionSnapshotFormData(
       name_ar,
       short_description_en: optionalText(formData.get("short_description_en")),
       short_description_ar: optionalText(formData.get("short_description_ar")),
-      description_en: optionalText(formData.get("description_en")),
-      description_ar: optionalText(formData.get("description_ar")),
+      description_en: sanitizeRichText(formData.get("description_en")),
+      description_ar: sanitizeRichText(formData.get("description_ar")),
       price: regularPrice,
       sale_price: salePrice,
       brand_name: optionalText(formData.get("brand_name")),
