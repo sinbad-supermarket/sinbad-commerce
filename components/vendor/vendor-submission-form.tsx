@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { ProductDescriptionEditor } from "@/components/vendor/product-description-editor";
 import type { CategoryRow } from "@/features/categories/types";
 import type { ProductSubmissionSnapshot } from "@/features/vendor-submissions/types";
+import type { VendorSubmissionFormActionState } from "@/features/vendor-submissions/actions";
 
 type VendorSubmissionFormProps = {
-  action: (formData: FormData) => void | Promise<void>;
+  action: (
+    previousState: VendorSubmissionFormActionState,
+    formData: FormData,
+  ) => Promise<VendorSubmissionFormActionState>;
   categories: CategoryRow[];
   error?: string;
   readOnly?: boolean;
@@ -64,6 +68,10 @@ export function VendorSubmissionForm({
   readOnly = false,
   snapshot,
 }: VendorSubmissionFormProps) {
+  const [formState, formAction] = useActionState(action, {
+    error: error ?? null,
+    success: null,
+  });
   const initialSelection = useMemo(
     () => selectedCategoryPair(categories, snapshot),
     [categories, snapshot],
@@ -95,9 +103,10 @@ export function VendorSubmissionForm({
   const selectedSubcategory = subcategories.find(
     (category) => categoryLabel(category) === subcategoryInput,
   );
+  const formError = formState.error ?? error;
 
   return (
-    <form className="seller-product-form" action={action} id="vendor-product-form">
+    <form className="seller-product-form" action={formAction} id="vendor-product-form">
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>
         <div className="form-grid">
@@ -436,7 +445,8 @@ export function VendorSubmissionForm({
           </select>
         </label>
 
-        {error ? <p className="form-error">{error}</p> : null}
+        {formError ? <p className="form-error">{formError}</p> : null}
+        {formState.success ? <p className="success-banner">{formState.success}</p> : null}
       </fieldset>
     </form>
   );

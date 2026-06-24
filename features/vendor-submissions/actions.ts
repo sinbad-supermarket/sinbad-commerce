@@ -35,6 +35,11 @@ function submissionErrorRedirect(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
 }
 
+export type VendorSubmissionFormActionState = {
+  error: string | null;
+  success: string | null;
+};
+
 function assertVendorCanWrite(status: string) {
   if (status === "suspended") {
     throw new Error("This vendor account is suspended. Product submissions are read-only.");
@@ -359,8 +364,9 @@ export async function createBlankProductSubmissionDraft() {
 
 export async function updateProductSubmissionDraft(
   submissionId: string,
+  _previousState: VendorSubmissionFormActionState,
   formData: FormData,
-) {
+): Promise<VendorSubmissionFormActionState> {
   const { currentVendor } = await requireSelectedVendor();
   const shouldSubmit = formData.get("submission_intent") === "submit";
 
@@ -420,17 +426,25 @@ export async function updateProductSubmissionDraft(
       }
     }
   } catch (error) {
-    submissionErrorRedirect(
-      `/vendor/products/submissions/${submissionId}`,
-      error instanceof Error
-        ? error.message
-        : shouldSubmit
-          ? "Unable to submit for review."
-          : "Unable to update submission draft.",
-    );
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : shouldSubmit
+            ? "Unable to submit for review."
+            : "Unable to update submission draft.",
+      success: null,
+    };
   }
 
-  redirect(shouldSubmit ? "/vendor/products" : `/vendor/products/submissions/${submissionId}`);
+  if (shouldSubmit) {
+    redirect("/vendor/products");
+  }
+
+  return {
+    error: null,
+    success: "Draft saved.",
+  };
 }
 
 export async function uploadSubmissionImage(submissionId: string, formData: FormData) {
