@@ -32,11 +32,11 @@ export function validateProductImageFile(value: FormDataEntryValue | null) {
   }
 
   if (value.size > maxProductImageSize) {
-    throw new Error("Image file must be 5 MB or smaller.");
+    throw new Error("Image must be 5 MB or smaller.");
   }
 
   if (!allowedProductImageMimeTypes.includes(value.type as AllowedProductImageMimeType)) {
-    throw new Error("Image file must be JPEG, PNG, or WebP.");
+    throw new Error("Image must be JPG, JPEG, PNG, or WebP.");
   }
 
   return value;
@@ -174,7 +174,7 @@ export async function getProductImageDimensions(file: File) {
     dimensions.width > maxProductImageDimension ||
     dimensions.height > maxProductImageDimension
   ) {
-    throw new Error("Image dimensions must be between 330x330 and 5000x5000 pixels.");
+    throw new Error("Image must be between 330x330 and 5000x5000 pixels.");
   }
 
   return dimensions;

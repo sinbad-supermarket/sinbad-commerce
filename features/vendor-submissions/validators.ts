@@ -251,16 +251,26 @@ export function assertSnapshotReadyForReview(snapshot: ProductSubmissionSnapshot
     throw new Error("At least one category is required before submitting for review.");
   }
 
+  const primaryImageCount = snapshot.images.filter((image) => image.is_primary).length;
+
+  if (primaryImageCount === 0) {
+    throw new Error("Please upload one primary image.");
+  }
+
+  if (primaryImageCount > 1) {
+    throw new Error("Please keep only one primary image.");
+  }
+
+  if (snapshot.images.filter((image) => !image.is_primary).length === 0) {
+    throw new Error("Please upload at least one additional image.");
+  }
+
   if (snapshot.images.length < 2) {
-    throw new Error("At least 2 product images are required before submitting.");
+    throw new Error("Please upload at least 2 product images.");
   }
 
   if (snapshot.images.length > 8) {
-    throw new Error("A product can have at most 8 images.");
-  }
-
-  if (snapshot.images.filter((image) => image.is_primary).length !== 1) {
-    throw new Error("Exactly one primary image is required before submitting.");
+    throw new Error("You can upload up to 8 images total.");
   }
 
   if (
@@ -274,6 +284,6 @@ export function assertSnapshotReadyForReview(snapshot: ProductSubmissionSnapshot
         image.height > 5000,
     )
   ) {
-    throw new Error("Product images must be between 330x330 and 5000x5000 pixels.");
+    throw new Error("Image must be between 330x330 and 5000x5000 pixels.");
   }
 }

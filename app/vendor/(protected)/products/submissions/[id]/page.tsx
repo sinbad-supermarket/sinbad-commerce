@@ -5,9 +5,7 @@ import { VendorSubmissionImages } from "@/components/vendor/vendor-submission-im
 import { VendorSubmissionForm } from "@/components/vendor/vendor-submission-form";
 import {
   deleteSubmissionImage,
-  makeSubmissionImagePrimary,
   submitProductSubmissionForReview,
-  updateSubmissionImage,
   updateProductSubmissionDraft,
   uploadSubmissionImage,
 } from "@/features/vendor-submissions/actions";
@@ -68,10 +66,6 @@ export default async function VendorSubmissionPage({
   const updateSubmission = updateProductSubmissionDraft.bind(null, submission.id);
   const submitSubmission = submitProductSubmissionForReview.bind(null, submission.id);
   const uploadImage = uploadSubmissionImage.bind(null, submission.id);
-  const updateImage = (imageId: string) =>
-    updateSubmissionImage.bind(null, submission.id, imageId);
-  const makePrimaryImage = (imageId: string) =>
-    makeSubmissionImagePrimary.bind(null, submission.id, imageId);
   const deleteImage = (imageId: string) =>
     deleteSubmissionImage.bind(null, submission.id, imageId);
   const signedImages = await createStagedSubmissionImageSignedItems(
@@ -102,8 +96,6 @@ export default async function VendorSubmissionPage({
           canEdit={canEdit}
           images={signedImages}
           onDelete={deleteImage}
-          onMakePrimary={makePrimaryImage}
-          onUpdate={updateImage}
           uploadAction={uploadImage}
         />
 

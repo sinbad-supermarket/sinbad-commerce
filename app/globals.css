@@ -467,6 +467,16 @@ a {
   gap: 24px;
 }
 
+.seller-image-section {
+  display: grid;
+  gap: 12px;
+}
+
+.seller-image-section h3 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
 .seller-upload-form {
   background: #f8fafc;
   border: 2px dashed #94a3b8;
@@ -538,6 +548,10 @@ a {
   grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
 }
 
+.seller-thumbnail-grid-compact {
+  max-width: 144px;
+}
+
 .seller-thumbnail-card {
   background: #ffffff;
   border: 1px solid var(--border);
@@ -566,7 +580,7 @@ a {
 }
 
 .seller-thumbnail-preview img {
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .seller-primary-star {
@@ -589,6 +603,10 @@ a {
 .seller-thumbnail-actions {
   display: grid;
   gap: 8px;
+  margin: 0;
+}
+
+.seller-delete-form {
   margin: 0;
 }
 
@@ -638,6 +656,15 @@ a {
 
 .danger-icon-button {
   color: #b42318;
+}
+
+.seller-trash-button {
+  background: #ffffff;
+  border-color: #fecaca;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
 }
 
 .image-upload-preview {

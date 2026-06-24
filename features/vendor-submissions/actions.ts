@@ -19,7 +19,6 @@ import {
   type ProductCondition,
   type ProductReviewSubmissionRow,
   type ProductSubmissionSnapshot,
-  type StagedSubmissionImage,
 } from "./types";
 import {
   assertSnapshotReadyForReview,
@@ -257,26 +256,6 @@ async function getOwnEditableSubmissionForSelectedVendor(submissionId: string) {
   };
 }
 
-function sortedImages(images: StagedSubmissionImage[]) {
-  return [...images].sort((a, b) => a.sort_order - b.sort_order);
-}
-
-function ensurePrimaryImage(images: StagedSubmissionImage[]) {
-  if (images.length === 0) {
-    return [];
-  }
-
-  if (images.some((image) => image.is_primary)) {
-    return images;
-  }
-
-  const firstImageId = sortedImages(images)[0].id;
-  return images.map((image) => ({
-    ...image,
-    is_primary: image.id === firstImageId,
-  }));
-}
-
 async function updateSubmissionSnapshot(
   submissionId: string,
   vendorId: string,
@@ -428,13 +407,21 @@ export async function updateProductSubmissionDraft(
 
 export async function uploadSubmissionImage(submissionId: string, formData: FormData) {
   let storagePath: string | null = null;
+  let replacedPrimaryStoragePath: string | null = null;
 
   try {
     const { currentVendor, submission } =
       await getOwnEditableSubmissionForSelectedVendor(submissionId);
     const file = validateProductImageFile(formData.get("image"));
-    if (submission.snapshot.images.length >= 8) {
-      throw new Error("A product can have at most 8 images.");
+    const imageRole = formData.get("image_role") === "primary" ? "primary" : "additional";
+    const replacingPrimaryImage = submission.snapshot.images.find((image) => image.is_primary);
+    const imageCountAfterUpload =
+      imageRole === "primary" && replacingPrimaryImage
+        ? submission.snapshot.images.length
+        : submission.snapshot.images.length + 1;
+
+    if (imageCountAfterUpload > 8) {
+      throw new Error("You can upload up to 8 images total.");
     }
 
     const dimensions = await getProductImageDimensions(file);
@@ -453,8 +440,26 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
       throw new Error(uploadError.message);
     }
 
-    const nextImages = ensurePrimaryImage([
-      ...submission.snapshot.images,
+    const remainingImages =
+      imageRole === "primary"
+        ? submission.snapshot.images.filter((image) => {
+            if (!image.is_primary) {
+              return true;
+            }
+
+            replacedPrimaryStoragePath = image.storage_path;
+            return false;
+          })
+        : submission.snapshot.images;
+    const nextAdditionalSortOrder =
+      remainingImages
+        .filter((image) => !image.is_primary)
+        .reduce((max, image) => Math.max(max, image.sort_order), 0) + 1;
+    const nextImages = [
+      ...remainingImages.map((image) => ({
+        ...image,
+        is_primary: imageRole === "primary" ? false : image.is_primary,
+      })),
       {
         id: imageId,
         storage_path: storagePath,
@@ -462,20 +467,26 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
         alt_text_ar: optionalImageText(formData.get("alt_text_ar")),
         sort_order:
           formData.get("sort_order") === null
-            ? submission.snapshot.images.length
+            ? imageRole === "primary"
+              ? 0
+              : nextAdditionalSortOrder
             : parseImageSortOrder(formData.get("sort_order")),
-        is_primary: submission.snapshot.images.length === 0,
+        is_primary: imageRole === "primary",
         file_size: file.size,
         mime_type: file.type,
         width: dimensions.width,
         height: dimensions.height,
       },
-    ]);
+    ];
 
     await updateSubmissionSnapshot(submission.id, currentVendor.vendor.id, {
       ...submission.snapshot,
       images: nextImages,
     });
+
+    if (replacedPrimaryStoragePath) {
+      await supabase.storage.from(productImageBucket).remove([replacedPrimaryStoragePath]);
+    }
   } catch (error) {
     if (storagePath) {
       const supabase = await createSupabaseServerClient();
@@ -484,7 +495,7 @@ export async function uploadSubmissionImage(submissionId: string, formData: Form
 
     submissionErrorRedirect(
       submissionDetailPath(submissionId),
-      error instanceof Error ? error.message : "Unable to upload staged image.",
+      error instanceof Error ? error.message : "Unable to upload image.",
     );
   }
 
@@ -580,9 +591,7 @@ export async function deleteSubmissionImage(submissionId: string, imageId: strin
       throw new Error(storageError.message);
     }
 
-    const nextImages = ensurePrimaryImage(
-      submission.snapshot.images.filter((item) => item.id !== imageId),
-    );
+    const nextImages = submission.snapshot.images.filter((item) => item.id !== imageId);
 
     await updateSubmissionSnapshot(submission.id, currentVendor.vendor.id, {
       ...submission.snapshot,
@@ -591,7 +600,7 @@ export async function deleteSubmissionImage(submissionId: string, imageId: strin
   } catch (error) {
     submissionErrorRedirect(
       submissionDetailPath(submissionId),
-      error instanceof Error ? error.message : "Unable to delete staged image.",
+      error instanceof Error ? error.message : "Unable to delete image.",
     );
   }
 
