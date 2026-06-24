@@ -55,8 +55,8 @@ export type VendorApplicationInput = {
 };
 
 export type VendorApplicationFiles = {
-  ownerDocument: File;
-  licenseDocument: File;
+  ownerDocument: File | null;
+  licenseDocument: File | null;
   authorizationDocument: File | null;
   bankDocument: File | null;
 };
@@ -134,7 +134,7 @@ function optionalDeliveryHandledBy(value: FormDataEntryValue | null) {
   return text as DeliveryHandledBy;
 }
 
-export function extensionForVendorApplicationDocument(mimeType: string) {
+function extensionForVendorApplicationDocument(mimeType: string) {
   switch (mimeType) {
     case "application/pdf":
       return "pdf";
@@ -149,11 +149,10 @@ export function extensionForVendorApplicationDocument(mimeType: string) {
   }
 }
 
-function requiredDocument(value: FormDataEntryValue | null, label: string) {
+function optionalDocument(value: FormDataEntryValue | null, label: string) {
   if (!(value instanceof File) || value.size === 0) {
-    throw new Error(`${label} is required.`);
+    return null;
   }
-
   if (value.size > maxVendorApplicationDocumentSize) {
     throw new Error(vendorApplicationDocumentSizeMessage);
   }
@@ -165,25 +164,10 @@ function requiredDocument(value: FormDataEntryValue | null, label: string) {
   return value;
 }
 
-function optionalDocument(value: FormDataEntryValue | null, label: string) {
-  if (!(value instanceof File) || value.size === 0) {
-    return null;
-  }
-
-  return requiredDocument(value, label);
-}
-
 function requiredAgreement(value: FormDataEntryValue | null, message: string) {
   if (value !== "on") {
     throw new Error(message);
   }
-}
-
-function signatoryDiffersFromOwner(ownerName: string, signatoryName: string | null) {
-  return Boolean(
-    signatoryName &&
-      signatoryName.trim().toLowerCase() !== ownerName.trim().toLowerCase(),
-  );
 }
 
 export function parseVendorApplicationFormData(formData: FormData): {
@@ -204,15 +188,11 @@ export function parseVendorApplicationFormData(formData: FormData): {
     "Authorization document",
   );
 
-  if (signatoryDiffersFromOwner(owner_full_name, authorized_signatory_name) && !authorizationDocument) {
-    throw new Error("Authorization document is required when the signatory differs from the owner.");
-  }
-
-  const ownerDocument = requiredDocument(
+  const ownerDocument = optionalDocument(
     formData.get("owner_civil_id_or_passport_document"),
     "Owner civil ID/passport document",
   );
-  const licenseDocument = requiredDocument(
+  const licenseDocument = optionalDocument(
     formData.get("commercial_license_document"),
     "Commercial license document",
   );
@@ -328,4 +308,8 @@ export function parseVendorLoginEmail(formData: FormData, fallbackEmail: string)
   }
 
   return requiredEmail(value, "Vendor login email");
+}
+
+export function documentExtensionForVendorApplicationFile(file: File) {
+  return extensionForVendorApplicationDocument(file.type);
 }

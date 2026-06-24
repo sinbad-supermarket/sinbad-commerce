@@ -123,7 +123,7 @@ the public Sinbad vendor application:
 - Store Info for future public store setup.
 - Operations / Address for order routing and fulfillment details.
 - Payout / Bank Info for future vendor settlement workflows.
-- Document Uploads for private application documents.
+- Document Uploads explains the manual document collection process.
 - Agreement for V1 commission and Sinbad-managed delivery acknowledgements.
 
 Owner and legal data are private admin records and are not displayed publicly. Store
@@ -135,16 +135,18 @@ Vendor application records use:
 - `vendor_applications`
 - private storage bucket `vendor-application-documents`
 
-Required documents:
+Required documents are collected manually after the application is submitted:
 
 - owner civil ID or passport document
 - commercial license document
 - authorization document when the authorized signatory differs from the owner
 - optional bank document
 
-Documents are private, limited to PDF/JPG/PNG/WebP, capped at 3 MB each, and
-capped at 10 MB total per application. Signed document URLs are generated only
-after an admin guard passes.
+The public form is text-data only for reliability. Public document uploads are
+deferred until a future one-file-at-a-time upload flow is built. Existing private
+document columns and the private `vendor-application-documents` bucket remain in
+place for future/manual admin-supported document handling. Signed document URLs
+are generated only after an admin guard passes.
 
 The public form requires applicants to acknowledge:
 

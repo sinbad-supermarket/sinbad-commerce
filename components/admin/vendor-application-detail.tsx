@@ -29,6 +29,34 @@ function DetailItem({
   );
 }
 
+function DocumentItem({
+  label,
+  documents,
+}: {
+  label: string;
+  documents: VendorApplicationDocument[];
+}) {
+  const document = documents.find((item) => item.label === label);
+
+  return (
+    <div className="document-list-item">
+      <span>{label}</span>
+      {document ? (
+        <Link
+          className="secondary-link"
+          href={document.signedUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          View document
+        </Link>
+      ) : (
+        <span className="status-muted">Not provided yet</span>
+      )}
+    </div>
+  );
+}
+
 export function VendorApplicationDetail({
   application,
   documents,
@@ -169,18 +197,15 @@ export function VendorApplicationDetail({
 
       <section className="admin-panel">
         <h2>Documents</h2>
+        <p className="page-copy">
+          Documents are collected manually after submission until a future
+          one-file-at-a-time upload flow is added.
+        </p>
         <div className="document-list">
-          {documents.map((document) => (
-            <Link
-              className="secondary-link"
-              href={document.signedUrl}
-              key={document.path}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {document.label}
-            </Link>
-          ))}
+          <DocumentItem label="Owner civil ID/passport" documents={documents} />
+          <DocumentItem label="Commercial license" documents={documents} />
+          <DocumentItem label="Authorization document" documents={documents} />
+          <DocumentItem label="Bank document" documents={documents} />
         </div>
       </section>
 

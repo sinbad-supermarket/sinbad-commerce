@@ -84,7 +84,9 @@ export async function getVendorApplicationDocuments(
           path: application.bank_document_path,
         }
       : null,
-  ].filter(Boolean) as { label: string; path: string }[];
+  ].filter((document): document is { label: string; path: string } =>
+    Boolean(document?.path),
+  );
 
   const supabase = createSupabaseAdminClient();
   const signedDocuments = await Promise.all(

@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
-  extensionForVendorApplicationDocument,
+  documentExtensionForVendorApplicationFile,
   parseOptionalAdminNotes,
   parseRequiredRejectionReason,
   parseVendorApplicationFormData,
@@ -24,7 +24,7 @@ function applicationSuccessRedirect(path: string, message: string): never {
 }
 
 function documentPath(applicationId: string, label: string, file: File) {
-  const extension = extensionForVendorApplicationDocument(file.type);
+  const extension = documentExtensionForVendorApplicationFile(file);
   return `vendor-applications/${applicationId}/${label}-${randomUUID()}.${extension}`;
 }
 
@@ -82,8 +82,12 @@ export async function submitVendorApplication(formData: FormData) {
   try {
     const { input, files } = parseVendorApplicationFormData(formData);
     const applicationId = randomUUID();
-    const ownerDocumentPath = documentPath(applicationId, "owner-id", files.ownerDocument);
-    const licenseDocumentPath = documentPath(applicationId, "license", files.licenseDocument);
+    const ownerDocumentPath = files.ownerDocument
+      ? documentPath(applicationId, "owner-id", files.ownerDocument)
+      : null;
+    const licenseDocumentPath = files.licenseDocument
+      ? documentPath(applicationId, "license", files.licenseDocument)
+      : null;
     const authorizationDocumentPath = files.authorizationDocument
       ? documentPath(applicationId, "authorization", files.authorizationDocument)
       : null;
@@ -91,8 +95,13 @@ export async function submitVendorApplication(formData: FormData) {
       ? documentPath(applicationId, "bank", files.bankDocument)
       : null;
 
-    await uploadDocument(ownerDocumentPath, files.ownerDocument);
-    await uploadDocument(licenseDocumentPath, files.licenseDocument);
+    if (files.ownerDocument && ownerDocumentPath) {
+      await uploadDocument(ownerDocumentPath, files.ownerDocument);
+    }
+
+    if (files.licenseDocument && licenseDocumentPath) {
+      await uploadDocument(licenseDocumentPath, files.licenseDocument);
+    }
 
     if (files.authorizationDocument && authorizationDocumentPath) {
       await uploadDocument(authorizationDocumentPath, files.authorizationDocument);
@@ -124,7 +133,7 @@ export async function submitVendorApplication(formData: FormData) {
 
   applicationSuccessRedirect(
     "/vendors/apply",
-    "Application submitted. Our admin team will review it manually.",
+    "Application submitted. Our admin team will review your details and contact you to request the required documents.",
   );
 }
 

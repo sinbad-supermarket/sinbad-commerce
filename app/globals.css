@@ -394,6 +394,14 @@ a {
   gap: 14px;
 }
 
+.document-list-item {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
 .muted-text {
   color: var(--muted);
 }

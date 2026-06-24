@@ -18,7 +18,7 @@ export type VendorApplicationRow = {
   owner_phone: string;
   owner_email: string;
   owner_civil_id_or_passport_number: string;
-  owner_civil_id_or_passport_document_path: string;
+  owner_civil_id_or_passport_document_path: string | null;
   authorized_signatory_name: string | null;
   authorized_signatory_phone: string | null;
   authorization_document_path: string | null;
@@ -26,7 +26,7 @@ export type VendorApplicationRow = {
   owner_notes: string | null;
   legal_business_name: string;
   commercial_license_number: string;
-  commercial_license_document_path: string;
+  commercial_license_document_path: string | null;
   business_address: string;
   tax_or_vat_number: string | null;
   company_notes: string | null;
