@@ -77,8 +77,9 @@ async function assertCategoriesExist(categoryIds: string[]) {
 }
 
 async function assertCanonicalFieldIsAvailable(
-  field: "slug" | "sku" | "barcode",
+  field: "slug" | "sku",
   value: string | null,
+  vendorId: string,
   currentProductId?: string | null,
 ) {
   if (!value) {
@@ -92,6 +93,7 @@ async function assertCanonicalFieldIsAvailable(
       p_field: field,
       p_value: value,
       p_exclude_product_id: currentProductId ?? null,
+      p_vendor_id: vendorId,
     },
   );
 
@@ -100,21 +102,21 @@ async function assertCanonicalFieldIsAvailable(
   }
 
   if (!data) {
-    throw new Error(`${field === "slug" ? "Slug" : field.toUpperCase()} is already in use.`);
+    throw new Error(
+      field === "sku"
+        ? "This SKU already exists for one of your products."
+        : "Slug is already in use.",
+    );
   }
 }
 
 async function assertSnapshotIsAvailable(
   snapshot: ProductSubmissionSnapshot,
+  vendorId: string,
   currentProductId?: string | null,
 ) {
-  await assertCanonicalFieldIsAvailable("slug", snapshot.product.slug, currentProductId);
-  await assertCanonicalFieldIsAvailable("sku", snapshot.product.sku, currentProductId);
-  await assertCanonicalFieldIsAvailable(
-    "barcode",
-    snapshot.product.barcode,
-    currentProductId,
-  );
+  await assertCanonicalFieldIsAvailable("slug", snapshot.product.slug, vendorId, currentProductId);
+  await assertCanonicalFieldIsAvailable("sku", snapshot.product.sku, vendorId, currentProductId);
 }
 
 function categoryIdsFromSnapshot(snapshot: ProductSubmissionSnapshot) {
@@ -287,7 +289,7 @@ export async function createProductSubmissionDraft(formData: FormData) {
       requireCategories: false,
     });
     await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
-    await assertSnapshotIsAvailable(snapshot);
+    await assertSnapshotIsAvailable(snapshot, currentVendor.vendor.id);
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
@@ -380,7 +382,7 @@ export async function updateProductSubmissionDraft(
     });
     snapshot.images = submission.snapshot.images;
     await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
-    await assertSnapshotIsAvailable(snapshot, submission.product_id);
+    await assertSnapshotIsAvailable(snapshot, currentVendor.vendor.id, submission.product_id);
 
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase
@@ -626,7 +628,11 @@ export async function submitProductSubmissionForReview(submissionId: string) {
 
     assertSnapshotReadyForReview(submission.snapshot);
     await assertCategoriesExist(categoryIdsFromSnapshot(submission.snapshot));
-    await assertSnapshotIsAvailable(submission.snapshot, submission.product_id);
+    await assertSnapshotIsAvailable(
+      submission.snapshot,
+      currentVendor.vendor.id,
+      submission.product_id,
+    );
 
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase

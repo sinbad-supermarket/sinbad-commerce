@@ -10,7 +10,7 @@ function productErrorRedirect(path: string, message: string): never {
 }
 
 async function assertUniqueField(
-  field: "slug" | "sku" | "barcode",
+  field: "slug",
   value: string | null,
   currentProductId?: string,
 ) {
@@ -32,8 +32,78 @@ async function assertUniqueField(
   }
 
   if (data && data.length > 0) {
-    throw new Error(`${field === "slug" ? "Slug" : field.toUpperCase()} is already in use.`);
+    throw new Error("Slug is already in use.");
   }
+}
+
+async function assertSkuIsUniqueForVendor(
+  vendorId: string,
+  sku: string | null,
+  currentProductId?: string,
+) {
+  if (!sku) {
+    return;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("products")
+    .select("id")
+    .eq("vendor_id", vendorId)
+    .eq("sku", sku)
+    .limit(1);
+
+  if (currentProductId) {
+    query = query.neq("id", currentProductId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (data && data.length > 0) {
+    throw new Error("This SKU already exists for one of your products.");
+  }
+}
+
+async function getInternalVendorId() {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("vendors")
+    .select("id")
+    .eq("slug", "sinbad-commerce-lab")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("Internal vendor was not found.");
+  }
+
+  return data.id as string;
+}
+
+async function getProductVendorId(productId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("vendor_id")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("Product was not found.");
+  }
+
+  return data.vendor_id as string;
 }
 
 async function assertCategoriesExist(categoryIds: string[]) {
@@ -78,15 +148,15 @@ export async function createProduct(formData: FormData) {
 
   try {
     const { product, categories } = parseProductFormData(formData);
+    const vendorId = await getInternalVendorId();
     await assertUniqueField("slug", product.slug);
-    await assertUniqueField("sku", product.sku);
-    await assertUniqueField("barcode", product.barcode);
+    await assertSkuIsUniqueForVendor(vendorId, product.sku);
     await assertCategoriesExist(categories.categoryIds);
 
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("products")
-      .insert(product)
+      .insert({ ...product, vendor_id: vendorId })
       .select("id")
       .single();
 
@@ -114,9 +184,9 @@ export async function updateProduct(productId: string, formData: FormData) {
 
   try {
     const { product, categories } = parseProductFormData(formData);
+    const vendorId = await getProductVendorId(productId);
     await assertUniqueField("slug", product.slug, productId);
-    await assertUniqueField("sku", product.sku, productId);
-    await assertUniqueField("barcode", product.barcode, productId);
+    await assertSkuIsUniqueForVendor(vendorId, product.sku, productId);
     await assertCategoriesExist(categories.categoryIds);
 
     const supabase = await createSupabaseServerClient();

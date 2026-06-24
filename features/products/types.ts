@@ -4,6 +4,7 @@ export type ProductStatus = (typeof productStatuses)[number];
 
 export type ProductRow = {
   id: string;
+  vendor_id: string;
   slug: string;
   sku: string | null;
   barcode: string | null;
