@@ -4,10 +4,8 @@ import { VendorShell } from "@/components/vendor/vendor-shell";
 import { VendorSubmissionImages } from "@/components/vendor/vendor-submission-images";
 import { VendorSubmissionForm } from "@/components/vendor/vendor-submission-form";
 import {
-  deleteSubmissionImage,
   submitProductSubmissionForReview,
   updateProductSubmissionDraft,
-  uploadSubmissionImage,
 } from "@/features/vendor-submissions/actions";
 import { createStagedSubmissionImageSignedItems } from "@/features/vendor-submissions/images";
 import {
@@ -65,9 +63,6 @@ export default async function VendorSubmissionPage({
     isEditableStatus;
   const updateSubmission = updateProductSubmissionDraft.bind(null, submission.id);
   const submitSubmission = submitProductSubmissionForReview.bind(null, submission.id);
-  const uploadImage = uploadSubmissionImage.bind(null, submission.id);
-  const deleteImage = (imageId: string) =>
-    deleteSubmissionImage.bind(null, submission.id, imageId);
   const signedImages = await createStagedSubmissionImageSignedItems(
     submission.snapshot.images,
   );
@@ -95,8 +90,7 @@ export default async function VendorSubmissionPage({
         <VendorSubmissionImages
           canEdit={canEdit}
           images={signedImages}
-          onDelete={deleteImage}
-          uploadAction={uploadImage}
+          submissionId={submission.id}
         />
 
         <VendorSubmissionForm

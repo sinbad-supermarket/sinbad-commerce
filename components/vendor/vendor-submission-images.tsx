@@ -1,11 +1,13 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import type { StagedSubmissionImageListItem } from "@/features/vendor-submissions/types";
 import { VendorImageUploadDropzone } from "./vendor-image-upload-dropzone";
 
 type VendorSubmissionImagesProps = {
   canEdit: boolean;
   images: StagedSubmissionImageListItem[];
-  onDelete: (imageId: string) => () => void | Promise<void>;
-  uploadAction: (formData: FormData) => void | Promise<void>;
+  submissionId: string;
 };
 
 function formatFileSize(fileSize: number | null) {
@@ -24,15 +26,125 @@ function imageAlt(image: StagedSubmissionImageListItem) {
   return image.alt_text_en ?? image.alt_text_ar ?? "Product image";
 }
 
+function uploadErrorFor(message: string) {
+  if (message.includes("large") || message.includes("5 MB")) {
+    return "Image is too large.";
+  }
+
+  if (message.includes("dimension") || message.includes("330x330")) {
+    return "Image dimensions are invalid.";
+  }
+
+  if (message.includes("format") || message.includes("JPG") || message.includes("WebP")) {
+    return "Unsupported image format.";
+  }
+
+  return message || "Upload failed. Please try again.";
+}
+
 export function VendorSubmissionImages({
   canEdit,
   images,
-  onDelete,
-  uploadAction,
+  submissionId,
 }: VendorSubmissionImagesProps) {
-  const orderedImages = sortedImages(images);
+  const [currentImages, setCurrentImages] = useState(images);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadingIds, setUploadingIds] = useState<string[]>([]);
+  const orderedImages = useMemo(() => sortedImages(currentImages), [currentImages]);
   const primaryImage = orderedImages.find((image) => image.is_primary) ?? null;
   const additionalImages = orderedImages.filter((image) => !image.is_primary);
+
+  async function uploadImage(file: File, imageRole: "primary" | "additional") {
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const tempUrl = URL.createObjectURL(file);
+    const tempImage: StagedSubmissionImageListItem = {
+      id: tempId,
+      storage_path: tempId,
+      alt_text_en: null,
+      alt_text_ar: null,
+      sort_order: imageRole === "primary" ? 0 : currentImages.length + 1,
+      is_primary: imageRole === "primary",
+      file_size: file.size,
+      mime_type: file.type,
+      width: null,
+      height: null,
+      signedUrl: tempUrl,
+    };
+    const previousImages = currentImages;
+
+    setError(null);
+    setUploadingIds((ids) => [...ids, tempId]);
+    setCurrentImages((items) =>
+      imageRole === "primary"
+        ? [...items.filter((image) => !image.is_primary), tempImage]
+        : [...items, tempImage],
+    );
+
+    try {
+      const formData = new FormData();
+      formData.set("image", file);
+      formData.set("image_role", imageRole);
+
+      const response = await fetch(
+        `/vendor/products/submissions/${submissionId}/images`,
+        {
+          body: formData,
+          method: "POST",
+        },
+      );
+      const result = (await response.json()) as {
+        error?: string;
+        images?: StagedSubmissionImageListItem[];
+      };
+
+      if (!response.ok || !result.images) {
+        throw new Error(result.error ?? "Upload failed. Please try again.");
+      }
+
+      setCurrentImages(result.images);
+    } catch (uploadError) {
+      setCurrentImages(previousImages);
+      setError(
+        uploadError instanceof Error
+          ? uploadErrorFor(uploadError.message)
+          : "Upload failed. Please try again.",
+      );
+    } finally {
+      URL.revokeObjectURL(tempUrl);
+      setUploadingIds((ids) => ids.filter((id) => id !== tempId));
+    }
+  }
+
+  async function deleteImage(imageId: string) {
+    const previousImages = currentImages;
+
+    setError(null);
+    setCurrentImages((items) => items.filter((image) => image.id !== imageId));
+
+    try {
+      const response = await fetch(
+        `/vendor/products/submissions/${submissionId}/images/${imageId}`,
+        { method: "DELETE" },
+      );
+      const result = (await response.json()) as {
+        error?: string;
+        images?: StagedSubmissionImageListItem[];
+      };
+
+      if (!response.ok || !result.images) {
+        throw new Error(result.error ?? "Upload failed. Please try again.");
+      }
+
+      setCurrentImages(result.images);
+    } catch (deleteError) {
+      setCurrentImages(previousImages);
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Upload failed. Please try again.",
+      );
+    }
+  }
 
   return (
     <section className="section-stack">
@@ -45,11 +157,13 @@ export function VendorSubmissionImages({
       </div>
 
       <div className="image-count-row">
-        <span className={images.length >= 2 ? "status-active" : "status-muted"}>
-          {images.length}/8 images
+        <span className={currentImages.length >= 2 ? "status-active" : "status-muted"}>
+          {currentImages.length}/8 images
         </span>
         <span className="field-help">Minimum 1 primary image and 1 additional image.</span>
       </div>
+
+      {error ? <p className="form-error">{error}</p> : null}
 
       <section className="seller-image-section">
         <div>
@@ -57,15 +171,20 @@ export function VendorSubmissionImages({
           <p className="field-help">This will be the main image of your product.</p>
         </div>
         <VendorImageUploadDropzone
-          action={uploadAction}
           disabled={!canEdit}
           helperText="Drag and drop or click to browse. JPG, JPEG, PNG, WebP. Max 5 MB. 330x330 to 5000x5000 pixels."
           imageRole="primary"
+          onFileSelected={uploadImage}
           title={primaryImage ? "Replace primary image" : "Upload primary image"}
         >
           {primaryImage ? (
             <div className="seller-thumbnail-grid seller-thumbnail-grid-compact">
-              <ImageThumbnail canEdit={canEdit} image={primaryImage} onDelete={onDelete} />
+              <ImageThumbnail
+                canEdit={canEdit}
+                image={primaryImage}
+                isUploading={uploadingIds.includes(primaryImage.id)}
+                onDelete={deleteImage}
+              />
             </div>
           ) : (
             <p className="empty-state">Please upload one primary image.</p>
@@ -84,10 +203,10 @@ export function VendorSubmissionImages({
           </span>
         </div>
         <VendorImageUploadDropzone
-          action={uploadAction}
-          disabled={!canEdit || images.length >= 8}
+          disabled={!canEdit || currentImages.length >= 8}
           helperText="Drag and drop or click to browse. JPG, JPEG, PNG, WebP. Max 5 MB each. 330x330 to 5000x5000 pixels."
           imageRole="additional"
+          onFileSelected={uploadImage}
           title="Upload additional images"
         >
           {additionalImages.length > 0 ? (
@@ -96,8 +215,9 @@ export function VendorSubmissionImages({
                 <ImageThumbnail
                   canEdit={canEdit}
                   image={image}
+                  isUploading={uploadingIds.includes(image.id)}
                   key={image.id}
-                  onDelete={onDelete}
+                  onDelete={deleteImage}
                 />
               ))}
             </div>
@@ -113,11 +233,13 @@ export function VendorSubmissionImages({
 function ImageThumbnail({
   canEdit,
   image,
+  isUploading,
   onDelete,
 }: {
   canEdit: boolean;
   image: StagedSubmissionImageListItem;
-  onDelete: (imageId: string) => () => void | Promise<void>;
+  isUploading: boolean;
+  onDelete: (imageId: string) => void;
 }) {
   return (
     <article className="seller-thumbnail-card">
@@ -127,18 +249,18 @@ function ImageThumbnail({
             ★
           </span>
         ) : null}
-        {canEdit ? (
-          <form action={onDelete(image.id)} className="seller-delete-form">
-            <button
-              aria-label="Delete image"
-              className="icon-button danger-icon-button seller-trash-button"
-              title="Delete"
-              type="submit"
-            >
-              🗑
-            </button>
-          </form>
+        {canEdit && !isUploading ? (
+          <button
+            aria-label="Delete image"
+            className="icon-button danger-icon-button seller-trash-button"
+            onClick={() => onDelete(image.id)}
+            title="Delete"
+            type="button"
+          >
+            🗑
+          </button>
         ) : null}
+        {isUploading ? <span className="seller-uploading-badge">Uploading...</span> : null}
         {image.signedUrl ? (
           <a href={image.signedUrl} rel="noreferrer" target="_blank">
             <img alt={imageAlt(image)} src={image.signedUrl} />
