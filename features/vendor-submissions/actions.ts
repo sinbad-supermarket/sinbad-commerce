@@ -362,6 +362,7 @@ export async function updateProductSubmissionDraft(
   formData: FormData,
 ) {
   const { currentVendor } = await requireSelectedVendor();
+  const shouldSubmit = formData.get("submission_intent") === "submit";
 
   try {
     assertVendorCanWrite(currentVendor.vendor.status);
@@ -397,14 +398,39 @@ export async function updateProductSubmissionDraft(
     if (error) {
       throw new Error(error.message);
     }
+
+    if (shouldSubmit) {
+      assertSnapshotReadyForReview(snapshot);
+      await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
+      await assertSnapshotIsAvailable(
+        snapshot,
+        currentVendor.vendor.id,
+        submission.product_id,
+      );
+
+      const { error: submitError } = await supabase.rpc(
+        "submit_vendor_product_review_submission",
+        {
+          p_submission_id: submissionId,
+        },
+      );
+
+      if (submitError) {
+        throw new Error(submitError.message);
+      }
+    }
   } catch (error) {
     submissionErrorRedirect(
       `/vendor/products/submissions/${submissionId}`,
-      error instanceof Error ? error.message : "Unable to update submission draft.",
+      error instanceof Error
+        ? error.message
+        : shouldSubmit
+          ? "Unable to submit for review."
+          : "Unable to update submission draft.",
     );
   }
 
-  redirect(`/vendor/products/submissions/${submissionId}`);
+  redirect(shouldSubmit ? "/vendor/products" : `/vendor/products/submissions/${submissionId}`);
 }
 
 export async function uploadSubmissionImage(submissionId: string, formData: FormData) {

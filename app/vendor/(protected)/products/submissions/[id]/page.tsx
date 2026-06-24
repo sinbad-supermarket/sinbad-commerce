@@ -4,7 +4,6 @@ import { VendorShell } from "@/components/vendor/vendor-shell";
 import { VendorSubmissionImages } from "@/components/vendor/vendor-submission-images";
 import { VendorSubmissionForm } from "@/components/vendor/vendor-submission-form";
 import {
-  submitProductSubmissionForReview,
   updateProductSubmissionDraft,
 } from "@/features/vendor-submissions/actions";
 import { createStagedSubmissionImageSignedItems } from "@/features/vendor-submissions/images";
@@ -62,7 +61,6 @@ export default async function VendorSubmissionPage({
     submission.submitted_by === userId &&
     isEditableStatus;
   const updateSubmission = updateProductSubmissionDraft.bind(null, submission.id);
-  const submitSubmission = submitProductSubmissionForReview.bind(null, submission.id);
   const signedImages = await createStagedSubmissionImageSignedItems(
     submission.snapshot.images,
   );
@@ -106,15 +104,21 @@ export default async function VendorSubmissionPage({
             <button
               className="secondary-button"
               form="vendor-product-form"
+              name="submission_intent"
               type="submit"
+              value="save"
             >
               Save Draft
             </button>
-            <form action={submitSubmission}>
-              <button className="primary-button" type="submit">
-                Submit For Review
-              </button>
-            </form>
+            <button
+              className="primary-button"
+              form="vendor-product-form"
+              name="submission_intent"
+              type="submit"
+              value="submit"
+            >
+              Submit For Review
+            </button>
           </div>
         ) : (
           <p className="empty-state">
