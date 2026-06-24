@@ -30,16 +30,13 @@ export function sanitizeRichText(value: FormDataEntryValue | string | null | und
       "ul",
       "ol",
       "li",
-      "a",
       "hr",
     ],
     allowedAttributes: {
-      a: ["href", "target", "rel"],
       h2: ["data-align"],
       h3: ["data-align"],
       p: ["data-align"],
     },
-    allowedSchemes: ["http", "https", "mailto", "tel"],
     disallowedTagsMode: "discard",
     enforceHtmlBoundary: true,
     transformTags: {
@@ -52,16 +49,6 @@ export function sanitizeRichText(value: FormDataEntryValue | string | null | und
       p: (_tagName, attribs) => ({ tagName: "p", attribs: normalizeAlignment(attribs) }),
       h2: (_tagName, attribs) => ({ tagName: "h2", attribs: normalizeAlignment(attribs) }),
       h3: (_tagName, attribs) => ({ tagName: "h3", attribs: normalizeAlignment(attribs) }),
-      a: (_tagName, attribs) => {
-        return {
-          tagName: "a",
-          attribs: {
-            href: attribs.href ?? "",
-            rel: "noopener noreferrer nofollow",
-            target: "_blank",
-          },
-        };
-      },
     },
   }).trim();
 

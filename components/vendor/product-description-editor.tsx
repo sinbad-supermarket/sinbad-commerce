@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -15,10 +14,6 @@ type ProductDescriptionEditorProps = {
   name: string;
   readOnly?: boolean;
 };
-
-function isSafeUrl(url: string) {
-  return /^(https?:|mailto:|tel:)/i.test(url);
-}
 
 export function ProductDescriptionEditor({
   dir = "ltr",
@@ -43,16 +38,6 @@ export function ProductDescriptionEditor({
       TextAlign.configure({
         types: ["heading", "paragraph"],
         alignments: ["left", "center", "right"],
-      }),
-      Link.configure({
-        autolink: false,
-        defaultProtocol: "https",
-        HTMLAttributes: {
-          rel: "noopener noreferrer nofollow",
-          target: "_blank",
-        },
-        openOnClick: false,
-        protocols: ["http", "https", "mailto", "tel"],
       }),
     ],
     [],
@@ -116,31 +101,11 @@ export function ProductDescriptionEditor({
     [editor, readOnly],
   );
 
-  const setLink = useCallback(() => {
-    if (!editor || readOnly) {
-      return;
-    }
-
-    const previousUrl = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Enter a safe link URL", previousUrl ?? "https://");
-
-    if (url === null) {
-      return;
-    }
-
-    const trimmedUrl = url.trim();
-    if (!trimmedUrl) {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-
-    if (!isSafeUrl(trimmedUrl)) {
-      window.alert("Only http, https, mailto, and tel links are allowed.");
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange("link").setLink({ href: trimmedUrl }).run();
-  }, [editor, readOnly]);
+  const blockValue = editor?.isActive("heading", { level: 2 })
+    ? "h2"
+    : editor?.isActive("heading", { level: 3 })
+      ? "h3"
+      : "paragraph";
 
   return (
     <div className="field rich-text-field">
@@ -148,110 +113,121 @@ export function ProductDescriptionEditor({
       <input name={name} type="hidden" value={html} />
       <div className="rich-text-editor">
         <div className="rich-text-toolbar" aria-label={`${label} formatting tools`}>
-          <button
-            aria-label="Bold"
-            className={editor?.isActive("bold") ? "active" : ""}
+          <select
+            aria-label="Text style"
+            className="rich-text-style-select"
             disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleBold().run())}
-            type="button"
+            onChange={(event) => {
+              const value = event.target.value;
+              run(() => {
+                if (value === "h2") {
+                  editor?.chain().focus().setHeading({ level: 2 }).run();
+                  return;
+                }
+
+                if (value === "h3") {
+                  editor?.chain().focus().setHeading({ level: 3 }).run();
+                  return;
+                }
+
+                editor?.chain().focus().setParagraph().run();
+              });
+            }}
+            value={blockValue}
           >
-            B
-          </button>
-          <button
-            aria-label="Italic"
-            className={editor?.isActive("italic") ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleItalic().run())}
-            type="button"
-          >
-            I
-          </button>
-          <button
-            aria-label="Underline"
-            className={editor?.isActive("underline") ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleUnderline().run())}
-            type="button"
-          >
-            U
-          </button>
-          <button
-            aria-label="Heading 2"
-            className={editor?.isActive("heading", { level: 2 }) ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleHeading({ level: 2 }).run())}
-            type="button"
-          >
-            H2
-          </button>
-          <button
-            aria-label="Heading 3"
-            className={editor?.isActive("heading", { level: 3 }) ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleHeading({ level: 3 }).run())}
-            type="button"
-          >
-            H3
-          </button>
-          <button
-            aria-label="Bullet list"
-            className={editor?.isActive("bulletList") ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleBulletList().run())}
-            type="button"
-          >
-            UL
-          </button>
-          <button
-            aria-label="Numbered list"
-            className={editor?.isActive("orderedList") ? "active" : ""}
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().toggleOrderedList().run())}
-            type="button"
-          >
-            1.
-          </button>
-          <button
-            aria-label="Align left"
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().setTextAlign("left").run())}
-            type="button"
-          >
-            L
-          </button>
-          <button
-            aria-label="Align center"
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().setTextAlign("center").run())}
-            type="button"
-          >
-            C
-          </button>
-          <button
-            aria-label="Align right"
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().setTextAlign("right").run())}
-            type="button"
-          >
-            R
-          </button>
-          <button
-            aria-label="Add link"
-            className={editor?.isActive("link") ? "active" : ""}
-            disabled={readOnly}
-            onClick={setLink}
-            type="button"
-          >
-            Link
-          </button>
-          <button
-            aria-label="Horizontal divider"
-            disabled={readOnly}
-            onClick={() => run(() => editor?.chain().focus().setHorizontalRule().run())}
-            type="button"
-          >
-            HR
-          </button>
+            <option value="paragraph">Normal</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+          </select>
+
+          <div className="rich-text-button-group" role="group" aria-label="Text formatting">
+            <button
+              aria-label="Bold"
+              className={editor?.isActive("bold") ? "active" : ""}
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().toggleBold().run())}
+              type="button"
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              aria-label="Italic"
+              className={editor?.isActive("italic") ? "active" : ""}
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().toggleItalic().run())}
+              type="button"
+            >
+              <em>I</em>
+            </button>
+            <button
+              aria-label="Underline"
+              className={editor?.isActive("underline") ? "active" : ""}
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().toggleUnderline().run())}
+              type="button"
+            >
+              <span className="toolbar-underline-icon">U</span>
+            </button>
+          </div>
+
+          <div className="rich-text-button-group" role="group" aria-label="Lists">
+            <button
+              aria-label="Bullet list"
+              className={editor?.isActive("bulletList") ? "active" : ""}
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().toggleBulletList().run())}
+              type="button"
+            >
+              <span className="toolbar-list-icon toolbar-list-icon-bullets" aria-hidden="true" />
+            </button>
+            <button
+              aria-label="Numbered list"
+              className={editor?.isActive("orderedList") ? "active" : ""}
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().toggleOrderedList().run())}
+              type="button"
+            >
+              <span className="toolbar-list-icon toolbar-list-icon-numbers" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="rich-text-button-group" role="group" aria-label="Alignment">
+            <button
+              aria-label="Align left"
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().setTextAlign("left").run())}
+              type="button"
+            >
+              <span className="toolbar-align-icon toolbar-align-left" aria-hidden="true" />
+            </button>
+            <button
+              aria-label="Align center"
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().setTextAlign("center").run())}
+              type="button"
+            >
+              <span className="toolbar-align-icon toolbar-align-center" aria-hidden="true" />
+            </button>
+            <button
+              aria-label="Align right"
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().setTextAlign("right").run())}
+              type="button"
+            >
+              <span className="toolbar-align-icon toolbar-align-right" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="rich-text-button-group" role="group" aria-label="Insert">
+            <button
+              aria-label="Horizontal divider"
+              disabled={readOnly}
+              onClick={() => run(() => editor?.chain().focus().setHorizontalRule().run())}
+              type="button"
+            >
+              <span className="toolbar-divider-icon" aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <EditorContent editor={editor} />
       </div>

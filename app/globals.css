@@ -774,15 +774,38 @@ a {
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding: 8px;
+}
+
+.rich-text-style-select {
+  appearance: none;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  height: 34px;
+  min-width: 132px;
+  padding: 0 28px 0 10px;
+}
+
+.rich-text-button-group {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  overflow: hidden;
 }
 
 .rich-text-toolbar button {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  border-inline-end: 1px solid var(--border);
+  border-radius: 0;
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
@@ -790,14 +813,17 @@ a {
   font-weight: 800;
   height: 32px;
   justify-content: center;
-  min-width: 32px;
-  padding: 0 8px;
+  min-width: 34px;
+  padding: 0 9px;
+}
+
+.rich-text-toolbar button:last-child {
+  border-inline-end: 0;
 }
 
 .rich-text-toolbar button.active {
-  background: #111827;
-  border-color: #111827;
-  color: #ffffff;
+  background: #e6f4f1;
+  color: #0f766e;
 }
 
 .rich-text-toolbar button:disabled {
@@ -809,6 +835,92 @@ a {
   min-height: 240px;
   outline: none;
   padding: 14px;
+}
+
+.toolbar-underline-icon {
+  text-decoration: underline;
+}
+
+.toolbar-list-icon,
+.toolbar-align-icon,
+.toolbar-divider-icon {
+  display: block;
+  position: relative;
+}
+
+.toolbar-list-icon {
+  height: 16px;
+  width: 18px;
+}
+
+.toolbar-list-icon::before,
+.toolbar-list-icon::after {
+  content: "";
+  position: absolute;
+}
+
+.toolbar-list-icon::before {
+  background:
+    linear-gradient(#111827, #111827) 8px 2px / 10px 2px no-repeat,
+    linear-gradient(#111827, #111827) 8px 7px / 10px 2px no-repeat,
+    linear-gradient(#111827, #111827) 8px 12px / 10px 2px no-repeat;
+  inset: 0;
+}
+
+.toolbar-list-icon-bullets::after {
+  background:
+    radial-gradient(circle, #111827 0 2px, transparent 2px) 1px 2px / 5px 5px no-repeat,
+    radial-gradient(circle, #111827 0 2px, transparent 2px) 1px 7px / 5px 5px no-repeat,
+    radial-gradient(circle, #111827 0 2px, transparent 2px) 1px 12px / 5px 5px no-repeat;
+  inset: 0;
+}
+
+.toolbar-list-icon-numbers::after {
+  color: #111827;
+  content: "1";
+  font-size: 9px;
+  font-weight: 900;
+  left: 1px;
+  line-height: 1;
+  top: 2px;
+}
+
+.toolbar-align-icon {
+  height: 16px;
+  width: 18px;
+}
+
+.toolbar-align-icon::before {
+  content: "";
+  inset: 1px 0;
+  position: absolute;
+}
+
+.toolbar-align-left::before {
+  background:
+    linear-gradient(#111827, #111827) left 1px top 0 / 18px 2px no-repeat,
+    linear-gradient(#111827, #111827) left 1px top 5px / 12px 2px no-repeat,
+    linear-gradient(#111827, #111827) left 1px top 10px / 16px 2px no-repeat;
+}
+
+.toolbar-align-center::before {
+  background:
+    linear-gradient(#111827, #111827) center top 0 / 18px 2px no-repeat,
+    linear-gradient(#111827, #111827) center top 5px / 12px 2px no-repeat,
+    linear-gradient(#111827, #111827) center top 10px / 16px 2px no-repeat;
+}
+
+.toolbar-align-right::before {
+  background:
+    linear-gradient(#111827, #111827) right 1px top 0 / 18px 2px no-repeat,
+    linear-gradient(#111827, #111827) right 1px top 5px / 12px 2px no-repeat,
+    linear-gradient(#111827, #111827) right 1px top 10px / 16px 2px no-repeat;
+}
+
+.toolbar-divider-icon {
+  background: #111827;
+  height: 2px;
+  width: 18px;
 }
 
 .rich-text-editor-surface > *:first-child,
@@ -840,12 +952,6 @@ a {
 .rich-text-content ul,
 .rich-text-content ol {
   padding-inline-start: 22px;
-}
-
-.rich-text-content a {
-  color: #0f766e;
-  font-weight: 700;
-  text-decoration: underline;
 }
 
 .rich-text-content [data-align="center"],
