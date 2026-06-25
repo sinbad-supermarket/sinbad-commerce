@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState, type ReactNode } from "react";
+import { VendorNewProductImages } from "@/components/vendor/vendor-new-product-images";
 import { ProductDescriptionEditor } from "@/components/vendor/product-description-editor";
 import type { CategoryRow } from "@/features/categories/types";
 import type { ProductSubmissionSnapshot } from "@/features/vendor-submissions/types";
@@ -15,8 +16,9 @@ type VendorSubmissionFormProps = {
     formData: FormData,
   ) => Promise<VendorSubmissionFormActionState>;
   categories: CategoryRow[];
-  children?: ReactNode | ((fieldErrors: Record<string, string>) => ReactNode);
+  children?: ReactNode;
   error?: string;
+  includeNewProductImages?: boolean;
   readOnly?: boolean;
   snapshot?: ProductSubmissionSnapshot;
 };
@@ -141,6 +143,7 @@ export function VendorSubmissionForm({
   categories,
   children,
   error,
+  includeNewProductImages = false,
   readOnly = false,
   snapshot,
 }: VendorSubmissionFormProps) {
@@ -197,7 +200,8 @@ export function VendorSubmissionForm({
       encType="multipart/form-data"
       id="vendor-product-form"
     >
-      {typeof children === "function" ? children(fieldErrors) : children}
+      {includeNewProductImages ? <VendorNewProductImages fieldErrors={fieldErrors} /> : null}
+      {children}
 
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>

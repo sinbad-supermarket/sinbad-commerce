@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { VendorShell } from "@/components/vendor/vendor-shell";
-import { VendorNewProductImages } from "@/components/vendor/vendor-new-product-images";
 import { VendorSubmissionForm } from "@/components/vendor/vendor-submission-form";
 import { createNewProductSubmission } from "@/features/vendor-submissions/actions";
 import { listActiveCategoryOptions } from "@/features/vendor-submissions/queries";
@@ -35,9 +34,8 @@ export default async function NewVendorProductPage() {
         <VendorSubmissionForm
           action={createNewProductSubmission}
           categories={categories}
-        >
-          {(fieldErrors) => <VendorNewProductImages fieldErrors={fieldErrors} />}
-        </VendorSubmissionForm>
+          includeNewProductImages
+        />
 
         <div className="submission-actions seller-submit-panel">
           <button
