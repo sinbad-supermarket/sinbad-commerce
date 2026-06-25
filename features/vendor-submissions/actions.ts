@@ -15,6 +15,7 @@ import { requireSelectedVendor } from "@/lib/auth/require-vendor";
 import type { ProductStatus } from "@/features/products/types";
 import {
   activeUpdateSubmissionStatuses,
+  type StagedSubmissionImage,
   type ProductAvailability,
   type ProductCondition,
   type ProductReviewSubmissionRow,
@@ -201,6 +202,109 @@ async function assertSnapshotIsAvailable(
 
 function categoryIdsFromSnapshot(snapshot: ProductSubmissionSnapshot) {
   return snapshot.categories.map((category) => category.category_id);
+}
+
+function optionalProductImageFile(value: FormDataEntryValue | null) {
+  if (!(value instanceof File) || value.size === 0) {
+    return null;
+  }
+
+  return value;
+}
+
+function newProductSubmissionImageFiles(formData: FormData) {
+  return {
+    primary: optionalProductImageFile(formData.get("primary_image")),
+    additional: formData
+      .getAll("additional_images")
+      .map((value) => optionalProductImageFile(value))
+      .filter((file): file is File => Boolean(file)),
+  };
+}
+
+type PreparedStagedSubmissionImage = {
+  file: File;
+  image: StagedSubmissionImage;
+};
+
+async function prepareNewSubmissionImages(
+  vendorId: string,
+  submissionId: string,
+  formData: FormData,
+) {
+  const files = newProductSubmissionImageFiles(formData);
+  const preparedImages: PreparedStagedSubmissionImage[] = [];
+
+  if (files.additional.length > 7) {
+    throw new Error("You can upload up to 8 images total.");
+  }
+
+  const orderedFiles = [
+    ...(files.primary ? [{ file: files.primary, isPrimary: true, sortOrder: 0 }] : []),
+    ...files.additional.map((file, index) => ({
+      file,
+      isPrimary: false,
+      sortOrder: index + 1,
+    })),
+  ];
+
+  if (orderedFiles.length > 8) {
+    throw new Error("You can upload up to 8 images total.");
+  }
+
+  for (const item of orderedFiles) {
+    const file = validateProductImageFile(item.file);
+    const dimensions = await getProductImageDimensions(file);
+    const imageId = randomUUID();
+    const extension = extensionForMimeType(file.type);
+    const storagePath = `vendor-submissions/${vendorId}/${submissionId}/${imageId}.${extension}`;
+
+    preparedImages.push({
+      file,
+      image: {
+        id: imageId,
+        storage_path: storagePath,
+        alt_text_en: null,
+        alt_text_ar: null,
+        sort_order: item.sortOrder,
+        is_primary: item.isPrimary,
+        file_size: file.size,
+        mime_type: file.type,
+        width: dimensions.width,
+        height: dimensions.height,
+      },
+    });
+  }
+
+  return preparedImages;
+}
+
+async function uploadPreparedSubmissionImages(preparedImages: PreparedStagedSubmissionImage[]) {
+  const supabase = await createSupabaseServerClient();
+  const uploadedPaths: string[] = [];
+
+  try {
+    for (const preparedImage of preparedImages) {
+      const { error } = await supabase.storage
+        .from(productImageBucket)
+        .upload(preparedImage.image.storage_path, preparedImage.file, {
+          contentType: preparedImage.file.type,
+          upsert: false,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      uploadedPaths.push(preparedImage.image.storage_path);
+    }
+  } catch (error) {
+    if (uploadedPaths.length > 0) {
+      await supabase.storage.from(productImageBucket).remove(uploadedPaths);
+    }
+
+    throw error;
+  }
 }
 
 function submissionDetailPath(submissionId: string) {
@@ -398,6 +502,120 @@ export async function createProductSubmissionDraft(formData: FormData) {
   }
 
   redirect(`/vendor/products/submissions/${submissionId}`);
+}
+
+export async function createNewProductSubmission(
+  _previousState: VendorSubmissionFormActionState,
+  formData: FormData,
+): Promise<VendorSubmissionFormActionState> {
+  const { currentVendor } = await requireSelectedVendor();
+  const shouldSubmit = formData.get("submission_intent") === "submit";
+  const submittedValues = collectSubmissionFormValues(formData);
+  let submissionId: string | null = null;
+  let insertedSubmission = false;
+
+  try {
+    assertVendorCanWrite(currentVendor.vendor.status);
+    const userId = await getCurrentUserId();
+    if (
+      !shouldSubmit &&
+      !String(formData.get("slug") ?? "").trim() &&
+      !String(formData.get("name_en") ?? "").trim()
+    ) {
+      formData.set("slug", `draft-${randomUUID()}`);
+    }
+
+    const snapshot = parseSubmissionSnapshotFormData(formData, {
+      requireCategories: false,
+    });
+    submissionId = randomUUID();
+    const preparedImages = await prepareNewSubmissionImages(
+      currentVendor.vendor.id,
+      submissionId,
+      formData,
+    );
+
+    snapshot.images = preparedImages.map((preparedImage) => preparedImage.image);
+
+    await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
+    await assertSnapshotIsAvailable(snapshot, currentVendor.vendor.id);
+
+    if (shouldSubmit) {
+      assertSnapshotReadyForReview(snapshot);
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const initialSnapshot = {
+      ...snapshot,
+      images: [],
+    };
+    const { error } = await supabase
+      .from("product_review_submissions")
+      .insert({
+        id: submissionId,
+        vendor_id: currentVendor.vendor.id,
+        product_id: null,
+        submitted_by: userId,
+        change_type: "create",
+        status: "draft",
+        snapshot: initialSnapshot,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    insertedSubmission = true;
+
+    if (preparedImages.length > 0) {
+      await uploadPreparedSubmissionImages(preparedImages);
+      await updateSubmissionSnapshot(submissionId, currentVendor.vendor.id, snapshot);
+    }
+
+    if (shouldSubmit) {
+      const { error: submitError } = await supabase.rpc(
+        "submit_vendor_product_review_submission",
+        {
+          p_submission_id: submissionId,
+        },
+      );
+
+      if (submitError) {
+        throw new Error(submitError.message);
+      }
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : shouldSubmit
+          ? "Unable to submit for review."
+          : "Unable to save product draft.";
+
+    if (insertedSubmission && submissionId) {
+      redirect(`${submissionDetailPath(submissionId)}?error=${encodeURIComponent(message)}`);
+    }
+
+    return {
+      error: message,
+      success: null,
+      values: submittedValues,
+    };
+  }
+
+  if (shouldSubmit) {
+    redirect("/vendor/products");
+  }
+
+  if (submissionId) {
+    redirect(submissionDetailPath(submissionId));
+  }
+
+  return {
+    error: null,
+    success: "Draft saved.",
+    values: null,
+  };
 }
 
 export async function createBlankProductSubmissionDraft() {

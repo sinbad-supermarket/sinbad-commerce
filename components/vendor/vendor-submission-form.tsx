@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useState, type ReactNode } from "react";
 import { ProductDescriptionEditor } from "@/components/vendor/product-description-editor";
 import type { CategoryRow } from "@/features/categories/types";
 import type { ProductSubmissionSnapshot } from "@/features/vendor-submissions/types";
@@ -15,6 +15,7 @@ type VendorSubmissionFormProps = {
     formData: FormData,
   ) => Promise<VendorSubmissionFormActionState>;
   categories: CategoryRow[];
+  children?: ReactNode;
   error?: string;
   readOnly?: boolean;
   snapshot?: ProductSubmissionSnapshot;
@@ -130,6 +131,7 @@ const brandSuggestions = [
 export function VendorSubmissionForm({
   action,
   categories,
+  children,
   error,
   readOnly = false,
   snapshot,
@@ -179,7 +181,14 @@ export function VendorSubmissionForm({
   const formError = formState.error ?? error;
 
   return (
-    <form className="seller-product-form" action={formAction} id="vendor-product-form">
+    <form
+      action={formAction}
+      className="seller-product-form"
+      encType="multipart/form-data"
+      id="vendor-product-form"
+    >
+      {children}
+
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>
         <div className="form-grid">
