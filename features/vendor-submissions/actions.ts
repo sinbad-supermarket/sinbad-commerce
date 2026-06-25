@@ -38,12 +38,87 @@ function submissionErrorRedirect(path: string, message: string): never {
 export type VendorSubmissionFormActionState = {
   error: string | null;
   success: string | null;
+  values: VendorSubmissionFormValues | null;
+};
+
+export type VendorSubmissionFormValues = {
+  name_en: string;
+  name_ar: string;
+  short_description_en: string;
+  short_description_ar: string;
+  category_id: string;
+  subcategory_id: string;
+  primary_category_id: string;
+  suggested_category: string;
+  suggested_category_visible: boolean;
+  brand_name: string;
+  brand_request: string;
+  brand_request_visible: boolean;
+  product_condition: string;
+  video_url: string;
+  price: string;
+  sale_price: string;
+  stock_quantity: string;
+  availability: string;
+  sku: string;
+  barcode: string;
+  specifications: Array<{ key: string; value: string }>;
+  warranty: string;
+  description_en: string;
+  description_ar: string;
+  intended_status: string;
 };
 
 function assertVendorCanWrite(status: string) {
   if (status === "suspended") {
     throw new Error("This vendor account is suspended. Product submissions are read-only.");
   }
+}
+
+function formText(formData: FormData, name: string) {
+  return String(formData.get(name) ?? "");
+}
+
+function formFlag(formData: FormData, name: string) {
+  return formData.get(name) === "true";
+}
+
+function collectSubmissionFormValues(formData: FormData): VendorSubmissionFormValues {
+  const specKeys = formData.getAll("spec_key");
+  const specValues = formData.getAll("spec_value");
+  const specLength = Math.max(specKeys.length, specValues.length);
+  const specifications = Array.from({ length: specLength }, (_, index) => ({
+    key: String(specKeys[index] ?? ""),
+    value: String(specValues[index] ?? ""),
+  }));
+
+  return {
+    name_en: formText(formData, "name_en"),
+    name_ar: formText(formData, "name_ar"),
+    short_description_en: formText(formData, "short_description_en"),
+    short_description_ar: formText(formData, "short_description_ar"),
+    category_id: formText(formData, "category_id"),
+    subcategory_id: formText(formData, "subcategory_id"),
+    primary_category_id: formText(formData, "primary_category_id"),
+    suggested_category: formText(formData, "suggested_category"),
+    suggested_category_visible: formFlag(formData, "suggested_category_visible"),
+    brand_name: formText(formData, "brand_name"),
+    brand_request: formText(formData, "brand_request"),
+    brand_request_visible: formFlag(formData, "brand_request_visible"),
+    product_condition: formText(formData, "product_condition"),
+    video_url: formText(formData, "video_url"),
+    price: formText(formData, "price"),
+    sale_price: formText(formData, "sale_price"),
+    stock_quantity: formText(formData, "stock_quantity"),
+    availability: formText(formData, "availability"),
+    sku: formText(formData, "sku"),
+    barcode: formText(formData, "barcode"),
+    specifications,
+    warranty: formText(formData, "warranty"),
+    description_en: formText(formData, "description_en"),
+    description_ar: formText(formData, "description_ar"),
+    intended_status: formText(formData, "intended_status"),
+  };
 }
 
 async function getCurrentUserId() {
@@ -369,6 +444,7 @@ export async function updateProductSubmissionDraft(
 ): Promise<VendorSubmissionFormActionState> {
   const { currentVendor } = await requireSelectedVendor();
   const shouldSubmit = formData.get("submission_intent") === "submit";
+  const submittedValues = collectSubmissionFormValues(formData);
 
   try {
     assertVendorCanWrite(currentVendor.vendor.status);
@@ -431,9 +507,10 @@ export async function updateProductSubmissionDraft(
         error instanceof Error
           ? error.message
           : shouldSubmit
-            ? "Unable to submit for review."
-            : "Unable to update submission draft.",
+          ? "Unable to submit for review."
+          : "Unable to update submission draft.",
       success: null,
+      values: submittedValues,
     };
   }
 
@@ -444,6 +521,7 @@ export async function updateProductSubmissionDraft(
   return {
     error: null,
     success: "Draft saved.",
+    values: null,
   };
 }
 
