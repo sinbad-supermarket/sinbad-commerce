@@ -153,11 +153,40 @@ a {
   resize: vertical;
 }
 
+.field-invalid > span:first-child,
+.field-invalid > legend,
+.seller-image-section.field-invalid h3 {
+  color: #b42318;
+}
+
+.field-invalid input:not([type="hidden"]),
+.field-invalid select,
+.field-invalid textarea {
+  background: #fff7f7;
+  border-color: #f04438;
+}
+
+.field-invalid .rich-text-editor {
+  background: #fff7f7;
+  border-color: #f04438;
+  box-shadow: 0 0 0 1px rgba(240, 68, 56, 0.15);
+}
+
+.field-invalid .seller-upload-form,
+.field-invalid .seller-upload-zone {
+  background: #fff7f7;
+  border-color: #f04438;
+}
+
 .form-error {
   color: #b42318;
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
+}
+
+.field-error {
+  font-weight: 700;
 }
 
 .success-banner {
@@ -179,6 +208,12 @@ a {
   font-weight: 700;
   min-height: 44px;
   padding: 10px 14px;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .page-header {

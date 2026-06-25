@@ -9,6 +9,7 @@ import { sanitizeRichText } from "@/lib/utils/rich-text";
 
 type ProductDescriptionEditorProps = {
   dir?: "ltr" | "rtl";
+  error?: string;
   initialValue?: string | null;
   label: string;
   name: string;
@@ -17,6 +18,7 @@ type ProductDescriptionEditorProps = {
 
 export function ProductDescriptionEditor({
   dir = "ltr",
+  error,
   initialValue,
   label,
   name,
@@ -108,7 +110,10 @@ export function ProductDescriptionEditor({
       : "paragraph";
 
   return (
-    <div className="field rich-text-field">
+    <div
+      className={error ? "field rich-text-field field-invalid" : "field rich-text-field"}
+      data-error-field={name}
+    >
       <span>{label}</span>
       <input name={name} type="hidden" value={html} />
       <div className="rich-text-editor">
@@ -235,6 +240,7 @@ export function ProductDescriptionEditor({
         Formatting is limited to safe marketplace content. External image URLs, raw HTML, scripts,
         embeds, colors, and custom styles are removed.
       </span>
+      {error ? <span className="form-error field-error">{error}</span> : null}
     </div>
   );
 }

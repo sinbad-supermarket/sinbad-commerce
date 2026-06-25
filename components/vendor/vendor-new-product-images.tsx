@@ -229,7 +229,10 @@ export function VendorNewProductImages({ fieldErrors = {} }: VendorNewProductIma
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <section className="seller-image-section">
+      <section
+        className={fieldErrors.primary_image ? "seller-image-section field-invalid" : "seller-image-section"}
+        data-error-field="primary_image"
+      >
         <div>
           <h3>Primary Image</h3>
           <p className="field-help">This will be the main image of your product.</p>
@@ -280,7 +283,10 @@ export function VendorNewProductImages({ fieldErrors = {} }: VendorNewProductIma
         </div>
       </section>
 
-      <section className="seller-image-section">
+      <section
+        className={fieldErrors.additional_images ? "seller-image-section field-invalid" : "seller-image-section"}
+        data-error-field="additional_images"
+      >
         <div>
           <h3>Additional Images</h3>
           <p className="field-help">Add 1-7 images.</p>

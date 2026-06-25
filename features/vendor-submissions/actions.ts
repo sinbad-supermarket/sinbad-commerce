@@ -39,6 +39,7 @@ function submissionErrorRedirect(path: string, message: string): never {
 export type VendorSubmissionFormActionState = {
   error: string | null;
   fieldErrors: Record<string, string>;
+  submissionId: string | null;
   success: string | null;
   values: VendorSubmissionFormValues | null;
 };
@@ -181,14 +182,23 @@ function friendlySubmissionError(message: string) {
     fieldErrors.specifications = "Please complete or remove the highlighted specification row.";
   } else if (normalized.includes("video url")) {
     fieldErrors.video_url = "Please enter a valid YouTube, TikTok, or Instagram URL.";
+  } else if (normalized.includes("availability")) {
+    fieldErrors.availability = "Please choose a valid availability option.";
+  } else if (normalized.includes("product condition")) {
+    fieldErrors.product_condition = "Please choose a valid product condition.";
+  } else if (normalized.includes("intended product status")) {
+    fieldErrors.intended_status = "Please choose what should happen after approval.";
+  } else if (normalized.includes("selected categories are unavailable")) {
+    fieldErrors.category_id = "Please choose an available category.";
   }
+
+  const firstFieldMessage = Object.values(fieldErrors)[0] ?? null;
 
   return {
     fieldErrors,
     message:
-      Object.keys(fieldErrors).length > 0
-        ? "Please check the highlighted fields."
-        : message || "Please check the form and try again.",
+      firstFieldMessage ??
+      (message ? "Please check the highlighted field and try again." : "Please check the form and try again."),
   };
 }
 
@@ -575,18 +585,33 @@ export async function createProductSubmissionDraft(formData: FormData) {
 }
 
 export async function createNewProductSubmission(
-  _previousState: VendorSubmissionFormActionState,
+  previousState: VendorSubmissionFormActionState,
   formData: FormData,
 ): Promise<VendorSubmissionFormActionState> {
   const { currentVendor } = await requireSelectedVendor();
   const shouldSubmit = formData.get("submission_intent") === "submit";
   const submittedValues = collectSubmissionFormValues(formData);
-  let submissionId: string | null = null;
+  let submissionId: string | null =
+    previousState.submissionId || formText(formData, "submission_id").trim() || null;
+  let existingSubmission: ProductReviewSubmissionRow | null = null;
   let insertedSubmission = false;
 
   try {
     assertVendorCanWrite(currentVendor.vendor.status);
     const userId = await getCurrentUserId();
+    if (submissionId) {
+      existingSubmission = await getVendorSubmissionById(
+        submissionId,
+        currentVendor.vendor.id,
+      );
+
+      if (!existingSubmission) {
+        throw new Error("Product draft was not found.");
+      }
+
+      await assertOwnEditableSubmission(existingSubmission, userId);
+    }
+
     if (
       !shouldSubmit &&
       !String(formData.get("slug") ?? "").trim() &&
@@ -598,14 +623,25 @@ export async function createNewProductSubmission(
     const snapshot = parseSubmissionSnapshotFormData(formData, {
       requireCategories: false,
     });
-    submissionId = randomUUID();
-    const preparedImages = await prepareNewSubmissionImages(
-      currentVendor.vendor.id,
-      submissionId,
-      formData,
-    );
 
-    snapshot.images = preparedImages.map((preparedImage) => preparedImage.image);
+    const newSubmissionId = submissionId ?? randomUUID();
+    const preparedImages =
+      existingSubmission || submissionId
+        ? []
+        : await prepareNewSubmissionImages(currentVendor.vendor.id, newSubmissionId, formData);
+
+    if (existingSubmission) {
+      snapshot.images = existingSubmission.snapshot.images;
+    } else if (preparedImages.length > 0) {
+      submissionId = newSubmissionId;
+      snapshot.images = preparedImages.map((preparedImage) => preparedImage.image);
+    } else {
+      submissionId = newSubmissionId;
+    }
+
+    if (!submissionId) {
+      throw new Error("Unable to prepare this product draft.");
+    }
 
     await assertCategoriesExist(categoryIdsFromSnapshot(snapshot));
     await assertSnapshotIsAvailable(snapshot, currentVendor.vendor.id);
@@ -615,27 +651,31 @@ export async function createNewProductSubmission(
     }
 
     const supabase = await createSupabaseServerClient();
-    const initialSnapshot = {
-      ...snapshot,
-      images: [],
-    };
-    const { error } = await supabase
-      .from("product_review_submissions")
-      .insert({
-        id: submissionId,
-        vendor_id: currentVendor.vendor.id,
-        product_id: null,
-        submitted_by: userId,
-        change_type: "create",
-        status: "draft",
-        snapshot: initialSnapshot,
-      });
+    if (existingSubmission) {
+      await updateSubmissionSnapshot(submissionId, currentVendor.vendor.id, snapshot);
+    } else {
+      const initialSnapshot = {
+        ...snapshot,
+        images: [],
+      };
+      const { error } = await supabase
+        .from("product_review_submissions")
+        .insert({
+          id: submissionId,
+          vendor_id: currentVendor.vendor.id,
+          product_id: null,
+          submitted_by: userId,
+          change_type: "create",
+          status: "draft",
+          snapshot: initialSnapshot,
+        });
 
-    if (error) {
-      throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      insertedSubmission = true;
     }
-
-    insertedSubmission = true;
 
     if (preparedImages.length > 0) {
       await uploadPreparedSubmissionImages(preparedImages);
@@ -670,6 +710,7 @@ export async function createNewProductSubmission(
     return {
       error: message,
       fieldErrors,
+      submissionId,
       success: null,
       values: submittedValues,
     };
@@ -680,13 +721,20 @@ export async function createNewProductSubmission(
   }
 
   if (submissionId) {
-    redirect(submissionDetailPath(submissionId));
+    return {
+      error: null,
+      fieldErrors: {},
+      submissionId,
+      success: "Draft saved successfully.",
+      values: submittedValues,
+    };
   }
 
   return {
     error: null,
     fieldErrors: {},
-    success: "Draft saved.",
+    submissionId: null,
+    success: "Draft saved successfully.",
     values: null,
   };
 }
@@ -804,6 +852,7 @@ export async function updateProductSubmissionDraft(
     return {
       error: message,
       fieldErrors,
+      submissionId,
       success: null,
       values: submittedValues,
     };
@@ -816,7 +865,8 @@ export async function updateProductSubmissionDraft(
   return {
     error: null,
     fieldErrors: {},
-    success: "Draft saved.",
+    submissionId,
+    success: "Draft saved successfully.",
     values: null,
   };
 }

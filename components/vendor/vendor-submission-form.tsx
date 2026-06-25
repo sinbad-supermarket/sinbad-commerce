@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useMemo, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
 import { VendorNewProductImages } from "@/components/vendor/vendor-new-product-images";
 import { ProductDescriptionEditor } from "@/components/vendor/product-description-editor";
 import type { CategoryRow } from "@/features/categories/types";
@@ -20,6 +21,7 @@ type VendorSubmissionFormProps = {
   error?: string;
   includeNewProductImages?: boolean;
   readOnly?: boolean;
+  showInlineActions?: boolean;
   snapshot?: ProductSubmissionSnapshot;
 };
 
@@ -138,6 +140,70 @@ function FieldError({ message }: { message?: string }) {
   return <span className="form-error field-error">{message}</span>;
 }
 
+function fieldClassName(message?: string) {
+  return message ? "field field-invalid" : "field";
+}
+
+function errorFieldProps(field: string) {
+  return {
+    "data-error-field": field,
+  };
+}
+
+const fieldFocusOrder = [
+  "primary_image",
+  "additional_images",
+  "name_en",
+  "name_ar",
+  "short_description_en",
+  "short_description_ar",
+  "category_id",
+  "brand_name",
+  "product_condition",
+  "video_url",
+  "price",
+  "sale_price",
+  "stock_quantity",
+  "availability",
+  "sku",
+  "barcode",
+  "specifications",
+  "warranty",
+  "description_en",
+  "description_ar",
+  "intended_status",
+];
+
+function VendorSubmissionActions() {
+  const { pending } = useFormStatus();
+  const [intent, setIntent] = useState<"save" | "submit" | null>(null);
+
+  return (
+    <div className="submission-actions seller-submit-panel">
+      <button
+        className="secondary-button"
+        disabled={pending}
+        name="submission_intent"
+        onClick={() => setIntent("save")}
+        type="submit"
+        value="save"
+      >
+        {pending && intent === "save" ? "Saving..." : "Save Draft"}
+      </button>
+      <button
+        className="primary-button"
+        disabled={pending}
+        name="submission_intent"
+        onClick={() => setIntent("submit")}
+        type="submit"
+        value="submit"
+      >
+        {pending && intent === "submit" ? "Submitting..." : "Submit For Review"}
+      </button>
+    </div>
+  );
+}
+
 export function VendorSubmissionForm({
   action,
   categories,
@@ -145,16 +211,18 @@ export function VendorSubmissionForm({
   error,
   includeNewProductImages = false,
   readOnly = false,
+  showInlineActions = false,
   snapshot,
 }: VendorSubmissionFormProps) {
   const [formState, formAction] = useActionState(action, {
     error: error ?? null,
     fieldErrors: {},
+    submissionId: null,
     success: null,
     values: null,
   });
   const submittedValues = formState.values;
-  const fieldErrors = formState.fieldErrors ?? {};
+  const fieldErrors = useMemo(() => formState.fieldErrors ?? {}, [formState.fieldErrors]);
   const initialSelection = useMemo(
     () =>
       submittedValues
@@ -193,6 +261,31 @@ export function VendorSubmissionForm({
   );
   const formError = formState.error ?? error;
 
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) {
+      return;
+    }
+
+    const firstField =
+      fieldFocusOrder.find((field) => fieldErrors[field]) ?? Object.keys(fieldErrors)[0];
+    const target = document.querySelector<HTMLElement>(`[data-error-field="${firstField}"]`);
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ block: "center", behavior: "smooth" });
+
+    window.setTimeout(() => {
+      const focusSelector = "input:not([type='hidden']),select,textarea,button,[contenteditable='true']";
+      const focusTarget = target.matches(focusSelector)
+        ? target
+        : target.querySelector<HTMLElement>(focusSelector);
+
+      focusTarget?.focus({ preventScroll: true });
+    }, 250);
+  }, [fieldErrors]);
+
   return (
     <form
       action={formAction}
@@ -200,13 +293,14 @@ export function VendorSubmissionForm({
       encType="multipart/form-data"
       id="vendor-product-form"
     >
+      <input name="submission_id" type="hidden" value={formState.submissionId ?? ""} />
       {includeNewProductImages ? <VendorNewProductImages fieldErrors={fieldErrors} /> : null}
       {children}
 
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.name_en)} {...errorFieldProps("name_en")}>
             <span>Product Name (English)</span>
             <input
               name="name_en"
@@ -216,7 +310,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.name_en} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.name_ar)} {...errorFieldProps("name_ar")}>
             <span>Product Name (Arabic)</span>
             <input
               name="name_ar"
@@ -229,7 +323,7 @@ export function VendorSubmissionForm({
           </label>
         </div>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.short_description_en)} {...errorFieldProps("short_description_en")}>
             <span>Short Description (English)</span>
             <textarea
               name="short_description_en"
@@ -239,7 +333,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.short_description_en} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.short_description_ar)} {...errorFieldProps("short_description_ar")}>
             <span>Short Description (Arabic)</span>
             <textarea
               name="short_description_ar"
@@ -253,7 +347,7 @@ export function VendorSubmissionForm({
         </div>
         <p className="field-help">Use 20 to 180 characters for each short description.</p>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.category_id)} {...errorFieldProps("category_id")}>
             <span>Category</span>
             <input
               disabled={readOnly}
@@ -267,7 +361,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.category_id} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.category_id)} {...errorFieldProps("category_id")}>
             <span>Subcategory</span>
             <input
               disabled={readOnly || !selectedCategory}
@@ -297,7 +391,7 @@ export function VendorSubmissionForm({
           value={selectedSubcategory?.id ?? selectedCategory?.id ?? ""}
         />
         {showSuggestedCategory ? (
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.suggested_category)} {...errorFieldProps("suggested_category")}>
             <span>Suggested Category</span>
             <input name="suggested_category_visible" type="hidden" value="true" />
             <input
@@ -319,7 +413,7 @@ export function VendorSubmissionForm({
           </button>
         )}
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.brand_name)} {...errorFieldProps("brand_name")}>
             <span>Brand</span>
             <input
               name="brand_name"
@@ -330,7 +424,10 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.brand_name} />
           </label>
-          <label className="field">
+          <label
+            className={fieldClassName(fieldErrors.product_condition)}
+            {...errorFieldProps("product_condition")}
+          >
             <span>Product Condition</span>
             <select
               name="product_condition"
@@ -341,6 +438,7 @@ export function VendorSubmissionForm({
               <option value="refurbished">Refurbished</option>
               <option value="used">Used</option>
             </select>
+            <FieldError message={fieldErrors.product_condition} />
           </label>
         </div>
         <datalist id="vendor-brand-options">
@@ -349,7 +447,7 @@ export function VendorSubmissionForm({
           ))}
         </datalist>
         {showBrandRequest ? (
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.brand_request)} {...errorFieldProps("brand_request")}>
             <span>Request New Brand</span>
             <input name="brand_request_visible" type="hidden" value="true" />
             <input
@@ -370,7 +468,7 @@ export function VendorSubmissionForm({
             Can&apos;t find your brand? Request a new brand
           </button>
         )}
-        <label className="field">
+        <label className={fieldClassName(fieldErrors.video_url)} {...errorFieldProps("video_url")}>
           <span>YouTube, TikTok, or Instagram URL (Optional)</span>
           <input
             name="video_url"
@@ -386,7 +484,7 @@ export function VendorSubmissionForm({
       <fieldset className="fieldset">
         <legend>Pricing & Inventory</legend>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.price)} {...errorFieldProps("price")}>
             <span>Regular Price (KWD)</span>
             <input
               name="price"
@@ -398,7 +496,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.price} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.sale_price)} {...errorFieldProps("sale_price")}>
             <span>Sale Price (KWD)</span>
             <input
               name="sale_price"
@@ -412,7 +510,7 @@ export function VendorSubmissionForm({
           </label>
         </div>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.stock_quantity)} {...errorFieldProps("stock_quantity")}>
             <span>Available Stock</span>
             <input
               name="stock_quantity"
@@ -424,7 +522,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.stock_quantity} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.availability)} {...errorFieldProps("availability")}>
             <span>Availability</span>
             <select
               name="availability"
@@ -435,10 +533,11 @@ export function VendorSubmissionForm({
               <option value="out_of_stock">Out of stock</option>
               <option value="preorder">Preorder</option>
             </select>
+            <FieldError message={fieldErrors.availability} />
           </label>
         </div>
         <div className="form-grid">
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.sku)} {...errorFieldProps("sku")}>
             <span>SKU (Optional)</span>
             <input
               name="sku"
@@ -447,7 +546,7 @@ export function VendorSubmissionForm({
             />
             <FieldError message={fieldErrors.sku} />
           </label>
-          <label className="field">
+          <label className={fieldClassName(fieldErrors.barcode)} {...errorFieldProps("barcode")}>
             <span>Barcode (Optional)</span>
             <input
               name="barcode"
@@ -459,7 +558,10 @@ export function VendorSubmissionForm({
         </div>
       </fieldset>
 
-      <fieldset className="fieldset">
+      <fieldset
+        className={fieldErrors.specifications ? "fieldset field-invalid" : "fieldset"}
+        data-error-field="specifications"
+      >
         <legend>Product Specifications</legend>
         {specRows.length === 0 ? (
           <p className="empty-state">
@@ -530,7 +632,7 @@ export function VendorSubmissionForm({
           </button>
         ) : null}
         <FieldError message={fieldErrors.specifications} />
-        <label className="field">
+        <label className={fieldClassName(fieldErrors.warranty)} {...errorFieldProps("warranty")}>
           <span>Warranty Information (Optional)</span>
           <input
             name="warranty"
@@ -545,25 +647,25 @@ export function VendorSubmissionForm({
       <fieldset className="fieldset">
         <legend>Full Description</legend>
         <ProductDescriptionEditor
+          error={fieldErrors.description_en}
           initialValue={productValue(submittedValues, snapshot, "description_en")}
           label="Product Description (English)"
           name="description_en"
           readOnly={readOnly}
         />
-        <FieldError message={fieldErrors.description_en} />
         <ProductDescriptionEditor
           dir="rtl"
+          error={fieldErrors.description_ar}
           initialValue={productValue(submittedValues, snapshot, "description_ar")}
           label="Product Description (Arabic)"
           name="description_ar"
           readOnly={readOnly}
         />
-        <FieldError message={fieldErrors.description_ar} />
       </fieldset>
 
       <fieldset className="fieldset">
         <legend>Actions</legend>
-        <label className="field">
+        <label className={fieldClassName(fieldErrors.intended_status)} {...errorFieldProps("intended_status")}>
           <span>Product status after approval</span>
           <select
             name="intended_status"
@@ -574,11 +676,13 @@ export function VendorSubmissionForm({
             <option value="active">Active</option>
             <option value="archived">Archived</option>
           </select>
+          <FieldError message={fieldErrors.intended_status} />
         </label>
 
         {formError ? <p className="form-error">{formError}</p> : null}
         {formState.success ? <p className="success-banner">{formState.success}</p> : null}
       </fieldset>
+      {showInlineActions && !readOnly ? <VendorSubmissionActions /> : null}
     </form>
   );
 }

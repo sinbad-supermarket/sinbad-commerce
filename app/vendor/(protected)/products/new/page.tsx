@@ -35,28 +35,8 @@ export default async function NewVendorProductPage() {
           action={createNewProductSubmission}
           categories={categories}
           includeNewProductImages
+          showInlineActions
         />
-
-        <div className="submission-actions seller-submit-panel">
-          <button
-            className="secondary-button"
-            form="vendor-product-form"
-            name="submission_intent"
-            type="submit"
-            value="save"
-          >
-            Save Draft
-          </button>
-          <button
-            className="primary-button"
-            form="vendor-product-form"
-            name="submission_intent"
-            type="submit"
-            value="submit"
-          >
-            Submit For Review
-          </button>
-        </div>
       </div>
     </VendorShell>
   );
