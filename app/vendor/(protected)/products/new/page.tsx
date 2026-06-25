@@ -36,7 +36,7 @@ export default async function NewVendorProductPage() {
           action={createNewProductSubmission}
           categories={categories}
         >
-          <VendorNewProductImages />
+          {(fieldErrors) => <VendorNewProductImages fieldErrors={fieldErrors} />}
         </VendorSubmissionForm>
 
         <div className="submission-actions seller-submit-panel">

@@ -86,7 +86,11 @@ async function buildLocalImage(file: File) {
   }
 }
 
-export function VendorNewProductImages() {
+type VendorNewProductImagesProps = {
+  fieldErrors?: Record<string, string>;
+};
+
+export function VendorNewProductImages({ fieldErrors = {} }: VendorNewProductImagesProps) {
   const primaryInputRef = useRef<HTMLInputElement>(null);
   const additionalInputRef = useRef<HTMLInputElement>(null);
   const [primaryImage, setPrimaryImage] = useState<LocalImage | null>(null);
@@ -164,10 +168,6 @@ export function VendorNewProductImages() {
         );
         return combined;
       });
-
-      if (files.length > availableSlots) {
-        setError("You can upload up to 8 images total.");
-      }
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed. Please try again.");
       nextTickSyncAdditionalInput(additionalImages);
@@ -274,6 +274,9 @@ export function VendorNewProductImages() {
           ) : (
             <p className="empty-state">Please upload one primary image.</p>
           )}
+          {fieldErrors.primary_image ? (
+            <p className="form-error field-error">{fieldErrors.primary_image}</p>
+          ) : null}
         </div>
       </section>
 
@@ -330,6 +333,9 @@ export function VendorNewProductImages() {
           ) : (
             <p className="empty-state">Please upload at least one additional image.</p>
           )}
+          {fieldErrors.additional_images ? (
+            <p className="form-error field-error">{fieldErrors.additional_images}</p>
+          ) : null}
         </div>
       </section>
     </section>

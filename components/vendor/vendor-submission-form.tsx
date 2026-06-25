@@ -15,7 +15,7 @@ type VendorSubmissionFormProps = {
     formData: FormData,
   ) => Promise<VendorSubmissionFormActionState>;
   categories: CategoryRow[];
-  children?: ReactNode;
+  children?: ReactNode | ((fieldErrors: Record<string, string>) => ReactNode);
   error?: string;
   readOnly?: boolean;
   snapshot?: ProductSubmissionSnapshot;
@@ -128,6 +128,14 @@ const brandSuggestions = [
   "Generic",
 ];
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return <span className="form-error field-error">{message}</span>;
+}
+
 export function VendorSubmissionForm({
   action,
   categories,
@@ -138,10 +146,12 @@ export function VendorSubmissionForm({
 }: VendorSubmissionFormProps) {
   const [formState, formAction] = useActionState(action, {
     error: error ?? null,
+    fieldErrors: {},
     success: null,
     values: null,
   });
   const submittedValues = formState.values;
+  const fieldErrors = formState.fieldErrors ?? {};
   const initialSelection = useMemo(
     () =>
       submittedValues
@@ -187,7 +197,7 @@ export function VendorSubmissionForm({
       encType="multipart/form-data"
       id="vendor-product-form"
     >
-      {children}
+      {typeof children === "function" ? children(fieldErrors) : children}
 
       <fieldset className="fieldset">
         <legend>Basic Product Information</legend>
@@ -200,6 +210,7 @@ export function VendorSubmissionForm({
               disabled={readOnly}
               required
             />
+            <FieldError message={fieldErrors.name_en} />
           </label>
           <label className="field">
             <span>Product Name (Arabic)</span>
@@ -210,6 +221,7 @@ export function VendorSubmissionForm({
               required
               dir="rtl"
             />
+            <FieldError message={fieldErrors.name_ar} />
           </label>
         </div>
         <div className="form-grid">
@@ -221,6 +233,7 @@ export function VendorSubmissionForm({
               disabled={readOnly}
               maxLength={180}
             />
+            <FieldError message={fieldErrors.short_description_en} />
           </label>
           <label className="field">
             <span>Short Description (Arabic)</span>
@@ -231,6 +244,7 @@ export function VendorSubmissionForm({
               dir="rtl"
               maxLength={180}
             />
+            <FieldError message={fieldErrors.short_description_ar} />
           </label>
         </div>
         <p className="field-help">Use 20 to 180 characters for each short description.</p>
@@ -247,6 +261,7 @@ export function VendorSubmissionForm({
               placeholder="Search and select a category"
               value={categoryInput}
             />
+            <FieldError message={fieldErrors.category_id} />
           </label>
           <label className="field">
             <span>Subcategory</span>
@@ -257,6 +272,7 @@ export function VendorSubmissionForm({
               placeholder={selectedCategory ? "Search and select a subcategory" : "Choose category first"}
               value={subcategoryInput}
             />
+            <FieldError message={fieldErrors.category_id} />
           </label>
         </div>
         <datalist id="vendor-category-options">
@@ -286,6 +302,7 @@ export function VendorSubmissionForm({
               disabled={readOnly}
               placeholder="Tell us the category you expected"
             />
+            <FieldError message={fieldErrors.suggested_category} />
           </label>
         ) : (
           <button
@@ -307,6 +324,7 @@ export function VendorSubmissionForm({
               list="vendor-brand-options"
               placeholder="Search or enter brand"
             />
+            <FieldError message={fieldErrors.brand_name} />
           </label>
           <label className="field">
             <span>Product Condition</span>
@@ -336,6 +354,7 @@ export function VendorSubmissionForm({
               disabled={readOnly}
               placeholder="Enter the brand name to request"
             />
+            <FieldError message={fieldErrors.brand_request} />
           </label>
         ) : (
           <button
@@ -356,6 +375,7 @@ export function VendorSubmissionForm({
             placeholder="https://..."
             type="url"
           />
+          <FieldError message={fieldErrors.video_url} />
         </label>
       </fieldset>
 
@@ -372,6 +392,7 @@ export function VendorSubmissionForm({
               defaultValue={productValue(submittedValues, snapshot, "price")}
               disabled={readOnly}
             />
+            <FieldError message={fieldErrors.price} />
           </label>
           <label className="field">
             <span>Sale Price (KWD)</span>
@@ -383,6 +404,7 @@ export function VendorSubmissionForm({
               defaultValue={productValue(submittedValues, snapshot, "sale_price")}
               disabled={readOnly}
             />
+            <FieldError message={fieldErrors.sale_price} />
           </label>
         </div>
         <div className="form-grid">
@@ -396,6 +418,7 @@ export function VendorSubmissionForm({
               defaultValue={productValue(submittedValues, snapshot, "stock_quantity")}
               disabled={readOnly}
             />
+            <FieldError message={fieldErrors.stock_quantity} />
           </label>
           <label className="field">
             <span>Availability</span>
@@ -418,6 +441,7 @@ export function VendorSubmissionForm({
               defaultValue={productValue(submittedValues, snapshot, "sku")}
               disabled={readOnly}
             />
+            <FieldError message={fieldErrors.sku} />
           </label>
           <label className="field">
             <span>Barcode (Optional)</span>
@@ -426,6 +450,7 @@ export function VendorSubmissionForm({
               defaultValue={productValue(submittedValues, snapshot, "barcode")}
               disabled={readOnly}
             />
+            <FieldError message={fieldErrors.barcode} />
           </label>
         </div>
       </fieldset>
@@ -445,20 +470,34 @@ export function VendorSubmissionForm({
                   <span>Specification</span>
                   <input
                     name="spec_key"
-                    defaultValue={spec.key}
                     disabled={readOnly}
                     maxLength={80}
+                    onChange={(event) =>
+                      setSpecRows((rows) =>
+                        rows.map((row, rowIndex) =>
+                          rowIndex === index ? { ...row, key: event.target.value } : row,
+                        ),
+                      )
+                    }
                     placeholder="Weight"
+                    value={spec.key}
                   />
                 </label>
                 <label className="field">
                   <span>Value</span>
                   <input
                     name="spec_value"
-                    defaultValue={spec.value}
                     disabled={readOnly}
                     maxLength={180}
+                    onChange={(event) =>
+                      setSpecRows((rows) =>
+                        rows.map((row, rowIndex) =>
+                          rowIndex === index ? { ...row, value: event.target.value } : row,
+                        ),
+                      )
+                    }
                     placeholder="500g"
+                    value={spec.value}
                   />
                 </label>
                 {!readOnly ? (
@@ -486,6 +525,7 @@ export function VendorSubmissionForm({
             + Add Specification
           </button>
         ) : null}
+        <FieldError message={fieldErrors.specifications} />
         <label className="field">
           <span>Warranty Information (Optional)</span>
           <input
@@ -494,6 +534,7 @@ export function VendorSubmissionForm({
             disabled={readOnly}
             placeholder="1 year warranty, No warranty, etc."
           />
+          <FieldError message={fieldErrors.warranty} />
         </label>
       </fieldset>
 
@@ -505,6 +546,7 @@ export function VendorSubmissionForm({
           name="description_en"
           readOnly={readOnly}
         />
+        <FieldError message={fieldErrors.description_en} />
         <ProductDescriptionEditor
           dir="rtl"
           initialValue={productValue(submittedValues, snapshot, "description_ar")}
@@ -512,6 +554,7 @@ export function VendorSubmissionForm({
           name="description_ar"
           readOnly={readOnly}
         />
+        <FieldError message={fieldErrors.description_ar} />
       </fieldset>
 
       <fieldset className="fieldset">

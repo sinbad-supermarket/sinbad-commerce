@@ -38,6 +38,7 @@ function submissionErrorRedirect(path: string, message: string): never {
 
 export type VendorSubmissionFormActionState = {
   error: string | null;
+  fieldErrors: Record<string, string>;
   success: string | null;
   values: VendorSubmissionFormValues | null;
 };
@@ -119,6 +120,75 @@ function collectSubmissionFormValues(formData: FormData): VendorSubmissionFormVa
     description_en: formText(formData, "description_en"),
     description_ar: formText(formData, "description_ar"),
     intended_status: formText(formData, "intended_status"),
+  };
+}
+
+function friendlySubmissionError(message: string) {
+  const normalized = message.toLowerCase();
+  const fieldErrors: Record<string, string> = {};
+
+  if (normalized.includes("slug is already in use") || normalized.includes("slug is required")) {
+    fieldErrors.name_en =
+      normalized.includes("required")
+        ? "Please enter a product name."
+        : "This product name creates a duplicate product URL. Please change the product name slightly.";
+  } else if (normalized.includes("english and arabic product names")) {
+    fieldErrors.name_en = "Please enter a product name in English.";
+    fieldErrors.name_ar = "Please enter a product name in Arabic.";
+  } else if (normalized.includes("english and arabic short descriptions")) {
+    fieldErrors.short_description_en = "Please enter a short description in English.";
+    fieldErrors.short_description_ar = "Please enter a short description in Arabic.";
+  } else if (normalized.includes("english short description")) {
+    fieldErrors.short_description_en = "English short description must be 20 to 180 characters.";
+  } else if (normalized.includes("arabic short description")) {
+    fieldErrors.short_description_ar = "Arabic short description must be 20 to 180 characters.";
+  } else if (normalized.includes("full descriptions")) {
+    fieldErrors.description_en = "Please enter the full product description in English.";
+    fieldErrors.description_ar = "Please enter the full product description in Arabic.";
+  } else if (normalized.includes("at least one category") || normalized.includes("category is required")) {
+    fieldErrors.category_id = "Please choose a category.";
+  } else if (normalized.includes("primary category")) {
+    fieldErrors.category_id = "Please choose a valid category and subcategory.";
+  } else if (normalized.includes("regular price is required")) {
+    fieldErrors.price = "Please enter a regular price.";
+  } else if (normalized.includes("regular price must")) {
+    fieldErrors.price = "Regular price must be a valid non-negative amount.";
+  } else if (normalized.includes("sale price")) {
+    fieldErrors.sale_price = "Sale price must be lower than regular price.";
+  } else if (normalized.includes("stock quantity") || normalized.includes("stock")) {
+    fieldErrors.stock_quantity = "Please enter available stock as a whole number.";
+  } else if (normalized.includes("sku")) {
+    fieldErrors.sku = "This SKU already exists for one of your products.";
+  } else if (normalized.includes("barcode")) {
+    fieldErrors.barcode = "Please check the barcode.";
+  } else if (normalized.includes("one primary image") || normalized.includes("primary image")) {
+    fieldErrors.primary_image = "Please upload one primary image.";
+  } else if (normalized.includes("additional image")) {
+    fieldErrors.additional_images = "Please upload at least one additional image.";
+  } else if (normalized.includes("at least 2 product images")) {
+    fieldErrors.additional_images = "Please upload at least one additional image.";
+  } else if (normalized.includes("up to 7 additional images")) {
+    fieldErrors.additional_images = "You can upload up to 7 additional images.";
+  } else if (normalized.includes("up to 8 images")) {
+    fieldErrors.additional_images = "You can upload up to 8 images total.";
+  } else if (normalized.includes("image must be between")) {
+    fieldErrors.primary_image = "Image must be between 330x330 and 5000x5000 pixels.";
+  } else if (normalized.includes("image must be jpg")) {
+    fieldErrors.primary_image = "Image must be JPG, JPEG, PNG, or WebP.";
+  } else if (normalized.includes("image must be 5 mb")) {
+    fieldErrors.primary_image = "Image must be 5 MB or smaller.";
+  } else if (normalized.includes("specification")) {
+    fieldErrors.specifications = "Please complete or remove the highlighted specification row.";
+  } else if (normalized.includes("video url")) {
+    fieldErrors.video_url = "Please enter a valid YouTube, TikTok, or Instagram URL.";
+  }
+
+  return {
+    fieldErrors,
+    message:
+      Object.keys(fieldErrors).length > 0
+        ? "Please check the highlighted fields."
+        : message || "Please check the form and try again.",
   };
 }
 
@@ -236,7 +306,7 @@ async function prepareNewSubmissionImages(
   const preparedImages: PreparedStagedSubmissionImage[] = [];
 
   if (files.additional.length > 7) {
-    throw new Error("You can upload up to 8 images total.");
+    throw new Error("You can upload up to 7 additional images.");
   }
 
   const orderedFiles = [
@@ -585,12 +655,13 @@ export async function createNewProductSubmission(
       }
     }
   } catch (error) {
-    const message =
+    const rawMessage =
       error instanceof Error
         ? error.message
         : shouldSubmit
           ? "Unable to submit for review."
           : "Unable to save product draft.";
+    const { fieldErrors, message } = friendlySubmissionError(rawMessage);
 
     if (insertedSubmission && submissionId) {
       redirect(`${submissionDetailPath(submissionId)}?error=${encodeURIComponent(message)}`);
@@ -598,6 +669,7 @@ export async function createNewProductSubmission(
 
     return {
       error: message,
+      fieldErrors,
       success: null,
       values: submittedValues,
     };
@@ -613,6 +685,7 @@ export async function createNewProductSubmission(
 
   return {
     error: null,
+    fieldErrors: {},
     success: "Draft saved.",
     values: null,
   };
@@ -720,13 +793,17 @@ export async function updateProductSubmissionDraft(
       }
     }
   } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : shouldSubmit
+    const rawMessage =
+      error instanceof Error
+        ? error.message
+        : shouldSubmit
           ? "Unable to submit for review."
-          : "Unable to update submission draft.",
+          : "Unable to update submission draft.";
+    const { fieldErrors, message } = friendlySubmissionError(rawMessage);
+
+    return {
+      error: message,
+      fieldErrors,
       success: null,
       values: submittedValues,
     };
@@ -738,6 +815,7 @@ export async function updateProductSubmissionDraft(
 
   return {
     error: null,
+    fieldErrors: {},
     success: "Draft saved.",
     values: null,
   };
